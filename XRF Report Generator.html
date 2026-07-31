@@ -85,14 +85,14 @@
   .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
   .grpcount{color:var(--muted);font-size:13px}
   /* preview page width tracks the chosen paper orientation (A4 minus 12mm margins → 186mm vs 273mm) */
-  /* The preview IS the page. A4 minus the 12mm print margins = 186mm portrait / 273mm landscape.
-     Matching it exactly means on-screen measurements are valid for print — they were not before,
-     and text sized against a 888px preview was being clipped at 702px on paper. */
-  .report-group{background:#fff;border:1px solid var(--line);border-radius:8px;padding:0;margin:0 auto 22px;
-    width:186mm;max-width:100%;box-shadow:0 2px 10px rgba(20,30,50,.10)}
-  body.or-landscape .report-group{width:273mm}
-  .selector{max-width:186mm}
-  body.or-landscape .selector{max-width:273mm}
+  /* The preview is a sheet of A4: full paper width with the print margins as padding, so the
+     content area is 186mm — the same width it prints at. Measuring on screen is therefore valid
+     for print, and the page still looks like a page instead of content jammed to the edge. */
+  .report-group{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12mm;margin:0 auto 22px;
+    width:210mm;max-width:100%;box-shadow:0 2px 10px rgba(20,30,50,.10)}
+  body.or-landscape .report-group{width:297mm}
+  .selector{max-width:210mm}
+  body.or-landscape .selector{max-width:297mm}
   .orient{display:flex;gap:8px;margin-top:6px}
   .orient button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 6px}
   .orient button.active{background:var(--brand);color:#fff;border-color:var(--brand)}
@@ -392,7 +392,7 @@
      PATCH  a fix or a tweak, nothing new.
    Bump this in the same commit as the change, and add a line to CHANGELOG.md. Shown in the
    sidebar only — the sidebar is hidden when printing, so it never lands in a customer's PDF. */
-const APP_VERSION='2.7.1';
+const APP_VERSION='2.7.2';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];

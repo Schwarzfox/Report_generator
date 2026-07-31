@@ -14,6 +14,13 @@ Bump the version in the same commit as the change and add a line here.
 
 ---
 
+## 2.7.2
+
+Preview page fixed. 2.7.1 sized it to the *content* width (186mm) with no padding, so on screen the
+report sat flush against the page edge and looked cropped. It is now a sheet of A4 — full 210mm
+paper with the 12mm print margins as padding. The content area is still 186mm, identical to print,
+so the measurement fix holds; the page just looks like a page again.
+
 ## 2.7.1
 
 **Fixes a printing defect that truncated the instrument name mid-word.** 2.7.0 sized the name by
