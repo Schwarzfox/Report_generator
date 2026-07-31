@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FT200 Report Generator</title>
+<title>XRF Report Generator</title>
 <style>
   :root{
     --bg:#f4f6f8; --panel:#ffffff; --ink:#1c2330; --muted:#5b6472; --line:#dfe4ea;
@@ -39,7 +39,22 @@
   .main{padding:22px;overflow-y:auto;max-height:100vh}
   .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
   .grpcount{color:var(--muted);font-size:13px}
+  /* preview page width tracks the chosen paper orientation (A4 minus 12mm margins → 186mm vs 273mm) */
   .report-group{background:#fff;border:1px solid var(--line);border-radius:12px;padding:26px;margin:0 auto 22px;max-width:940px;box-shadow:0 1px 3px rgba(20,30,50,.05)}
+  body.or-landscape .report-group,body.or-landscape .selector{max-width:1380px}
+  .orient{display:flex;gap:8px;margin-top:6px}
+  .orient button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 6px}
+  .orient button.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .orient .pg{border:1.6px solid currentColor;border-radius:2px;display:inline-block}
+  .orient .pg.p{width:11px;height:15px}
+  .orient .pg.l{width:15px;height:11px}
+  /* profile picker */
+  .prof{display:flex;gap:6px;align-items:center;margin-bottom:4px}
+  .prof select{flex:1;min-width:0}
+  .prof button{padding:6px 9px;line-height:1}
+  .profbar{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}
+  .profbar button{flex:1;font-size:12px;padding:6px 4px}
+  .warn{font-size:12px;color:#b3541e;margin-top:8px}
   .rg-head{display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:6px}
   .party{max-width:46%}
   .party.right{text-align:right}
@@ -50,18 +65,22 @@
   .rg-title{font-size:20px;font-weight:700;margin:14px 0 2px}
   .rg-sub{font-size:12.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
   .rg-cal{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-weight:600;color:var(--ink)}
+  /* permanent instrument band: which device (and serial) produced these numbers */
+  .rg-device{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;background:var(--resbg);border:1px solid #c3d6f2;border-radius:7px;
+    padding:6px 11px;margin:10px 0 4px;font-size:11.5px;color:#2b3a4f;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .rg-device b{font-size:12.5px;color:var(--res)}
+  .rg-device .sn{font-variant-numeric:tabular-nums}
+  /* abbreviation key — small, right-aligned, closes out the section it belongs to */
+  .abbr{font-size:9.5px;line-height:1.5;color:#8b95a3;text-align:right;margin:-12px 0 18px;padding-left:18%}
+  .abbr b{font-weight:600;color:#6b7480}
   table.data{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:13px}
   body.tw-fit table.data{width:auto}                                   /* Fit content: shrink-wrap */
-  body.tw-balanced table.data{table-layout:fixed}                      /* Balanced: honor colgroup weights */
-  body.tw-balanced table.data th{white-space:normal}                   /* let headers wrap in narrow columns */
-  body.tw-balanced table.data td{overflow:hidden;text-overflow:ellipsis}
   table.data th,table.data td{border:1px solid #bcc7d3;padding:7px 10px;text-align:left;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   table.data tr.elem-top td{border-top:2px solid #c9d2dd}
-  table.data th.qgrp,table.data td.qgrp{border-left:2px solid #aeb9c7;padding-left:13px}   /* group value+± together, separate from next element */
   table.data th.val{text-align:right}
   table.data td.val{text-align:right;font-weight:600}                    /* result numbers: right-aligned so digits line up, emphasised */
-  table.data th.err{text-align:left}
-  table.data td.err{text-align:left;color:#6b7480;padding-left:5px}      /* ± hugs its value, muted (secondary) */
+  /* uncertainty lives in the SAME cell as its value — smaller and muted, so it reads as secondary */
+  .pm{font-size:.8em;font-weight:400;color:#7b8593;margin-left:4px;white-space:nowrap}
   table.data th{background:#cbdcef;color:#14315c;font-weight:700}
   table.data th.txt,table.data td.txt{text-align:left}
   table.data tr:nth-child(even) td{background:#e5ecf5}
@@ -89,8 +108,9 @@
   .empty{max-width:900px;margin:60px auto;text-align:center;color:var(--muted)}
   .empty h2{color:var(--ink)}
   @media print{
-    @page{margin:12mm}
+    /* NOTE: @page size (portrait/landscape) is injected at runtime into #pageStyle below */
     body{background:#fff}
+    body.or-landscape .report-group,body.or-landscape .selector{max-width:none}
     .app{display:block}
     .side,.toolbar,.no-print{display:none!important}
     .main{padding:0;max-height:none;overflow:visible}
@@ -102,13 +122,16 @@
     table.data tr{page-break-inside:avoid}                 /* keep rows whole, but let a long table flow across pages */
     table.data thead{display:table-header-group}           /* repeat the header row on each printed page */
     .sect-h,.chart-box h4{page-break-after:avoid;break-after:avoid}
+    .abbr{page-break-before:avoid;break-before:avoid}       /* the key must never orphan from its section */
+    .rg-device{page-break-after:avoid;break-after:avoid}
   }
 </style>
+<style id="pageStyle">@page{size:A4 portrait;margin:12mm}</style>
 </head>
 <body>
 <div class="app">
   <aside class="side">
-    <h1>FT200 Report Generator</h1>
+    <h1>XRF Report Generator</h1>
     <div class="sub">Load measurement JSON → grouped by calibration → one PDF per group. Everything is saved for next time.</div>
 
     <div class="card">
@@ -120,11 +143,16 @@
       </div>
       <div id="loadInfo" class="note" style="margin-top:8px"></div>
       <div style="margin-top:8px"><button id="clearBtn" class="no-print">Clear loaded data</button></div>
-      <label class="fld" style="margin-top:12px">Table width</label>
+      <label class="fld" style="margin-top:12px">Page orientation</label>
+      <div class="orient">
+        <button id="or_portrait" data-or="portrait"><i class="pg p"></i>Portrait</button>
+        <button id="or_landscape" data-or="landscape"><i class="pg l"></i>Landscape</button>
+      </div>
+      <div class="note" style="margin-top:5px">Sets the preview width and the PDF page size. The print dialog can still override it.</div>
+      <label class="fld" style="margin-top:10px">Table width</label>
       <select id="t_tablewidth">
         <option value="full">Full width (stretch to page)</option>
         <option value="fit">Fit content (shrink to fit)</option>
-        <option value="balanced">Balanced (by importance)</option>
       </select>
     </div>
 
@@ -136,7 +164,7 @@
       <div id="quantCols"></div>
       <div class="toggle" id="row_mean"><input type="checkbox" id="c_mean" checked><label for="c_mean">Mean (repeats)</label></div>
       <div class="toggle" id="row_sd"><input type="checkbox" id="c_sd" checked><label for="c_sd">SD (repeats)</label></div>
-      <div class="toggle"><input type="checkbox" id="c_error" checked><label for="c_error">Uncertainty (± values)</label></div>
+      <div class="toggle"><input type="checkbox" id="c_error" checked><label for="c_error">Uncertainty (± , inside the value cell)</label></div>
       <div class="colsub">Other information</div>
       <div class="toggle"><input type="checkbox" id="c_passfail" checked><label for="c_passfail">Pass / Fail (control limits)</label></div>
       <div class="toggle"><input type="checkbox" id="c_coll" checked><label for="c_coll">Collimator</label></div>
@@ -158,9 +186,11 @@
 
     <div class="card">
       <h3>3 · Sections</h3>
+      <div class="toggle"><input type="checkbox" id="t_device" checked><label for="t_device">Instrument header (device + serial)</label></div>
       <div class="toggle" id="row_stats"><input type="checkbox" id="t_stats" checked><label for="t_stats">Statistics table</label></div>
       <div class="toggle"><input type="checkbox" id="t_statchart"><label for="t_statchart">Statistics chart</label></div>
       <div class="toggle"><input type="checkbox" id="t_spectrum" checked><label for="t_spectrum">Spectrum chart</label></div>
+      <div class="toggle"><input type="checkbox" id="t_abbr" checked><label for="t_abbr">Abbreviation key under each section</label></div>
     </div>
 
     <div class="card">
@@ -178,6 +208,17 @@
     <div class="card">
       <h3>5 · Your company <span class="note">(saved here)</span></h3>
       <div class="toggle"><input type="checkbox" id="t_company" checked><label for="t_company">Show in report</label></div>
+      <label class="fld">Saved companies</label>
+      <div class="prof">
+        <select id="p_company_sel"></select>
+        <button id="p_company_ren" title="Rename this profile">✎</button>
+        <button id="p_company_del" title="Delete this profile">🗑</button>
+      </div>
+      <div class="profbar">
+        <button id="p_company_save" title="Overwrite the selected profile with the fields below">Update</button>
+        <button id="p_company_new" title="Store the fields below as a new profile">Save as new</button>
+      </div>
+      <div class="note" id="p_company_state"></div>
       <button id="companyLogoBtn">Upload logo</button>
       <button id="companyLogoClear" title="Remove logo">✕</button>
       <img id="companyLogoPrev" class="logo-prev" hidden>
@@ -190,6 +231,17 @@
     <div class="card">
       <h3>6 · Customer</h3>
       <div class="toggle"><input type="checkbox" id="t_customer" checked><label for="t_customer">Show in report</label></div>
+      <label class="fld">Saved customers</label>
+      <div class="prof">
+        <select id="p_customer_sel"></select>
+        <button id="p_customer_ren" title="Rename this profile">✎</button>
+        <button id="p_customer_del" title="Delete this profile">🗑</button>
+      </div>
+      <div class="profbar">
+        <button id="p_customer_save" title="Overwrite the selected profile with the fields below">Update</button>
+        <button id="p_customer_new" title="Store the fields below as a new profile">Save as new</button>
+      </div>
+      <div class="note" id="p_customer_state"></div>
       <button id="custLogoBtn">Upload logo</button>
       <button id="custLogoClear" title="Remove">✕</button>
       <img id="custLogoPrev" class="logo-prev" hidden>
@@ -200,6 +252,7 @@
       <label class="fld">Job / order number</label>
       <input type="text" id="f_job" placeholder="e.g. PO-12345">
     </div>
+    <div id="storeWarn" class="warn" hidden></div>
   </aside>
 
   <main class="main">
@@ -230,13 +283,21 @@ let MEAS=[];
 let activeKey=null;   // selected type when multiple are loaded
 let companyLogo=null, customerLogo=null;
 const settings={coname:'',coaddr:'',customer:'',custaddr:'',job:'',title:'',calname:'',operator:'',notes:''};
-const toggles={company:true,customer:true,stats:true,statchart:false,spectrum:true,tablewidth:'full'};   // tablewidth: 'full' | 'fit' | 'balanced'
+const toggles={company:true,customer:true,device:true,stats:true,statchart:false,spectrum:true,abbr:true,
+  tablewidth:'full',        // 'full' | 'fit'
+  orientation:'portrait'};  // 'portrait' | 'landscape'
+/* Saved company/customer profiles. The form fields are always the LIVE values; a profile is a
+   named snapshot you can recall. Selecting one copies it into the fields (and so into the report). */
+const profiles={company:[],customer:[]};   // company: {id,label,name,addr,logo} · customer: adds {job}
+const activeProf={company:null,customer:null};   // id of the currently selected profile, or null
 const colFlags={reading:true,sample:true,coll:true,date:true,datefmt:'iso',time:true,timefmt:'hms',error:true,passfail:true,mean:true,sd:true};
 const colState={};   // `${groupKey}||${qkey}` -> bool
 const dataCols={};   // dataFieldName -> bool
 
 /* ---------- helpers ---------- */
 const $=id=>document.getElementById(id);
+let idSeq=0;
+const newId=()=>'p'+Date.now().toString(36)+(idSeq++).toString(36);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const nl2=s=>esc(s).replace(/\n/g,'<br>');
 function fmt(x,dec){if(x==null||Number.isNaN(x))return '—';return Number(x).toFixed(dec==null?2:dec);}
@@ -297,8 +358,11 @@ function extract(d){
     };
   });
   const dfN=d.dataFieldNames||[], dfV=d.dataFieldValues||[];
+  const hw=md.hwSerialNumbers||{};
   return {
     ulid:d.ulid||'', sample:d.sampleName||'(unnamed)', seq:d.sequenceNumber||'', lotId:d.lotId||'',
+    device:{type:hw.deviceType||'',sn:hw.deviceSn||'',tube:hw.xrtType||'',
+      calDate:md.instrumentCalibrationDate||'',checkDate:md.healthCheckDate||''},
     programUlid:d.measurementProgramUlid||'',   // non-empty = run via an application
     dataFields:dfN.map((n,i)=>({name:n,value:dfV[i]!=null?dfV[i]:''})),
     limits:md.applicationControlLimitsResults||[],
@@ -311,12 +375,17 @@ function extract(d){
 }
 
 /* ---------- persistence ---------- */
+function storeWarn(msg){const el=$('storeWarn'); if(!el)return; el.textContent=msg||''; el.hidden=!msg;}
 function saveState(){   // settings/config only — measurements are NOT persisted (cleared each session)
   const base={company:{name:settings.coname,addr:settings.coaddr,logo:companyLogo},
     customer:{name:settings.customer,addr:settings.custaddr,job:settings.job,logo:customerLogo},
     report:{title:settings.title,operator:settings.operator,notes:settings.notes},
-    toggles,colFlags,colState,dataCols};
-  try{localStorage.setItem('xrf_state',JSON.stringify(base));}catch(e){}
+    profiles,activeProf,toggles,colFlags,colState,dataCols};
+  try{localStorage.setItem('xrf_state',JSON.stringify(base)); storeWarn('');}
+  catch(e){   // almost always the ~5 MB quota, blown by base64 logos — say so instead of failing silently
+    storeWarn('⚠ Could not save: browser storage is full. Delete a saved profile or remove a logo, '+
+              'otherwise your settings will be lost when you close this page.');
+  }
 }
 function loadState(){
   let s; try{s=JSON.parse(localStorage.getItem('xrf_state'));}catch(e){}
@@ -330,6 +399,19 @@ function loadState(){
   Object.assign(colState,s.colState||{}); Object.assign(dataCols,s.dataCols||{});
   if(!toggles.tablewidth) toggles.tablewidth=toggles.compact?'fit':'full';   // migrate old compact flag
   delete toggles.compact;
+  if(toggles.tablewidth==='balanced') toggles.tablewidth='full';             // v2 dropped the Balanced preset
+  if(toggles.orientation!=='landscape') toggles.orientation='portrait';
+  // v1 → v2: a single company/customer becomes the first saved profile, so nothing the user typed is lost
+  const P=s.profiles||{};
+  profiles.company=Array.isArray(P.company)?P.company:[];
+  profiles.customer=Array.isArray(P.customer)?P.customer:[];
+  if(!profiles.company.length && (settings.coname||settings.coaddr||companyLogo))
+    profiles.company.push({id:newId(),label:settings.coname||'Company 1',name:settings.coname,addr:settings.coaddr,logo:companyLogo});
+  if(!profiles.customer.length && (settings.customer||settings.custaddr||customerLogo))
+    profiles.customer.push({id:newId(),label:settings.customer||'Customer 1',name:settings.customer,addr:settings.custaddr,job:settings.job,logo:customerLogo});
+  const A=s.activeProf||{};
+  activeProf.company=profiles.company.some(p=>p.id===A.company)?A.company:(profiles.company[0]||{}).id||null;
+  activeProf.customer=profiles.customer.some(p=>p.id===A.customer)?A.customer:(profiles.customer[0]||{}).id||null;
 }
 
 /* ---------- files ---------- */
@@ -408,6 +490,50 @@ function qVal(m,q){ // returns {disp,err,num}
   return {disp:el.fracDisp||'—',err:el.fracErrDisp,num:el.frac};
 }
 
+/* ---------- instrument identification ---------- */
+// distinct instruments across the group — a report may legitimately mix two machines, so never assume one
+function groupDevices(g){
+  const seen=new Map();
+  (g?g.items:[]).forEach(m=>{const d=m.device||{}; if(!d.type&&!d.sn)return;
+    const k=d.type+'|'+d.sn; if(!seen.has(k))seen.set(k,d);});
+  return [...seen.values()];
+}
+function deviceBand(g){
+  const ds=groupDevices(g); if(!ds.length)return '';
+  const chips=ds.map(d=>`<b>${esc(d.type||'Instrument')}</b>${d.sn?`<span class="sn"> · S/N ${esc(d.sn)}</span>`:''}`).join('&nbsp;&nbsp;+&nbsp;&nbsp;');
+  let extra='';
+  if(ds.length===1){   // instrument-level provenance is only meaningful when there is exactly one instrument
+    const d=ds[0];
+    if(d.tube) extra+=`<span>X-ray tube: ${esc(d.tube)}</span>`;
+    if(d.calDate) extra+=`<span>Instrument calibration: ${esc(fmtDateOnly(d.calDate,colFlags.datefmt))}</span>`;
+  }
+  const lead=ds.length>1?'Measured with multiple instruments:':'Measured with';
+  return `<div class="rg-device"><span>${lead} ${chips}</span>${extra}</div>`;
+}
+
+/* ---------- abbreviation key ---------- */
+const ABBR={
+  '±':'measurement uncertainty (statistical, 1σ)',
+  'Mean':'arithmetic average','SD':'standard deviation','RSD':'relative standard deviation (SD ÷ mean)',
+  'Min':'lowest value','Max':'highest value','n':'number of measurements','σ':'standard deviation (sigma)',
+  'UCL':'upper control limit','LCL':'lower control limit','MR':'moving range (change between consecutive readings)',
+  'cps':'counts per second','keV':'kilo-electronvolt (X-ray photon energy)',
+  // units the instrument can report — thickness and composition
+  'wt%':'weight percent (mass fraction)','at%':'atomic percent','ppm':'parts per million (1 ppm = 0.0001 wt%)',
+  'μm':'micrometre (0.001 mm)','µm':'micrometre (0.001 mm)','nm':'nanometre (0.001 μm)',
+  'mil':'thousandth of an inch (25.4 μm)','µin':'microinch (0.0254 μm)','μin':'microinch (0.0254 μm)',
+  'g/m²':'grams per square metre (coating mass per area)','mg/m²':'milligrams per square metre',
+  'S/N':'serial number','XRF':'X-ray fluorescence'
+};
+// build the key from what the section ACTUALLY rendered — a report with no SPC chart must not explain UCL/LCL
+function abbrKey(keys){
+  if(!toggles.abbr)return '';
+  const seen=new Set(), out=[];
+  (keys||[]).forEach(k=>{if(k&&ABBR[k]&&!seen.has(k)){seen.add(k);out.push(`<b>${esc(k)}</b> = ${esc(ABBR[k])}`);}});
+  return out.length?`<div class="abbr">${out.join(' &nbsp;·&nbsp; ')}</div>`:'';
+}
+const unitKeys=qs=>qs.map(q=>q.unit).filter(Boolean);
+
 /* ---------- columns config UI ---------- */
 function buildDataCols(g){
   const names=g?groupDataFieldNames(g):[], host=$('dataCols');
@@ -444,14 +570,14 @@ function selectorBanner(gs){
   el.appendChild(row); return el;
 }
 function render(){
+  profState('company'); profState('customer');   // fields may have drifted from the selected profile
   const gs=groups();
   const host=$('preview');
   if(!MEAS.length){$('grpCount').textContent='';host.innerHTML='<div class="empty"><h2>No measurements loaded</h2><p>Choose or drop your <b>measurement-…json</b> files on the left.</p></div>';return;}
   const ag=activeGroup(gs);
   $('f_calname').placeholder=ag?groupLabel(ag,gs):'(detected name)';   // show detected (disambiguated) name as the override hint
-  document.body.classList.remove('tw-fit','tw-balanced');
-  if(toggles.tablewidth==='fit') document.body.classList.add('tw-fit');
-  else if(toggles.tablewidth==='balanced') document.body.classList.add('tw-balanced');
+  document.body.classList.toggle('tw-fit',toggles.tablewidth==='fit');
+  applyOrientation();
   const inlineMS=!!(ag&&transposedLayout(ag));   // Mean/SD are inline columns only in the transposed composition layout
   $('row_stats').style.display=inlineMS?'none':'';        // normal layout uses the separate stats table instead
   $('row_mean').style.display=inlineMS?'':'none';         // hide the dead Mean/SD column toggles in coating layout
@@ -478,11 +604,12 @@ function renderGroup(g,gi){
       </div>`:'<div class="party right"></div>';
   const head=(toggles.company||toggles.customer)?`<div class="rg-head">${coBlock}${cuBlock}</div>`:'';
   const calDisplay=(settings.calname||'').trim()||groupLabel(g);
-  let html=head+`<div class="rg-title">${esc(settings.title||'FT200 Report')}</div>
+  let html=head+`<div class="rg-title">${esc(settings.title||'XRF Measurement Report')}</div>
     <div class="rg-sub">
       <span>Operator: ${esc(opName||'—')}</span>
       <span>${g.items.length} measurement(s)</span>
     </div>`;
+  if(toggles.device) html+=deviceBand(g);
 
   if(transposedLayout(g)){
     html+=`<div class="sect-h">Results${g.items.length>1?` (n = ${g.items.length})`:''}</div>`+compositionReport(g);
@@ -506,24 +633,18 @@ function resultsTable(g){
   const qs=reportableQuantities(g).filter(q=>colOn(g,q));
   const dfNames=groupDataFieldNames(g).filter(n=>dataColOn(n));
   const showPF=colFlags.passfail && groupHasLimits(g);
-  // header — order matches the Columns panel: # · results(±) · Pass/Fail · Collimator · Date · Time · Data fields
-  // w[] collects a relative width weight per column, in the same order — used only by the "Balanced" preset.
-  let h='<tr>'; const w=[];
-  if(colFlags.reading){h+='<th class="txt">#</th>'; w.push(6);}          // narrow, but wide enough for 2-digit row numbers
-  if(colFlags.sample){h+='<th class="txt">Sample</th>'; w.push(13);}
-  // value columns: right-aligned + emphasised; ± hugs its value (left-aligned) and is muted.
-  // qgrp = group-start divider so each value+± reads as one unit, separate from the next element.
-  const valCls=`val${colFlags.error?' qgrp':''}`;
-  qs.forEach(q=>{h+=`<th class="${valCls}">${esc(q.label)}</th>`; w.push(20);   // result — wide
-    if(colFlags.error){h+='<th class="err">±</th>'; w.push(9);}});               // ± — narrow, muted
-  if(showPF){h+='<th>Pass/Fail</th>'; w.push(12);}
-  if(colFlags.coll){h+='<th>Collimator</th>'; w.push(7);}               // narrow
-  if(colFlags.date){h+='<th>Date</th>'; w.push(13);}
-  if(colFlags.time){h+='<th>Time</th>'; w.push(13);}                     // fits 10:12:56
-  dfNames.forEach(n=>{h+=`<th>${esc(n)}</th>`; w.push(12);});
+  // header — order matches the Columns panel: # · results (± inline) · Pass/Fail · Collimator · Date · Time · Data fields
+  // one column per quantity: the uncertainty rides along inside the value cell, so the count stays low.
+  let h='<tr>';
+  if(colFlags.reading) h+='<th class="txt">#</th>';
+  if(colFlags.sample) h+='<th class="txt">Sample</th>';
+  qs.forEach(q=>{h+=`<th class="val">${esc(q.label)}</th>`;});
+  if(showPF) h+='<th>Pass/Fail</th>';
+  if(colFlags.coll) h+='<th>Collimator</th>';
+  if(colFlags.date) h+='<th>Date</th>';
+  if(colFlags.time) h+='<th>Time</th>';
+  dfNames.forEach(n=>{h+=`<th>${esc(n)}</th>`;});
   h+='</tr>';
-  const tot=w.reduce((a,b)=>a+b,0)||1;
-  const cg=toggles.tablewidth==='balanced'?`<colgroup>${w.map(x=>`<col style="width:${(x/tot*100).toFixed(2)}%">`).join('')}</colgroup>`:'';
   // rows
   let body='';
   g.items.forEach((m,idx)=>{
@@ -531,8 +652,8 @@ function resultsTable(g){
     if(colFlags.reading) r+=`<td class="txt">${idx+1}</td>`;
     if(colFlags.sample) r+=`<td class="txt">${esc(m.sample||'—')}</td>`;
     qs.forEach(q=>{const v=qVal(m,q);
-      r+=`<td class="${valCls}">${esc(v.disp)}</td>`;
-      if(colFlags.error) r+=`<td class="err">${v.err!=null?esc(v.err):'—'}</td>`;});
+      const u=(colFlags.error&&v.err!=null)?`<span class="pm">± ${esc(v.err)}</span>`:'';
+      r+=`<td class="val">${esc(v.disp)}${u}</td>`;});
     if(showPF){const s=controlStatus(m); r+=`<td class="${s==='fail'?'pf-fail':s==='pass'?'pf-pass':''}">${s?(s==='pass'?'Pass':'Fail'):'—'}</td>`;}
     if(colFlags.coll) r+=`<td>${esc(m.coll||'—')}${m.coll?' mm':''}</td>`;
     if(colFlags.date) r+=`<td>${esc(fmtDateOnly(m.timestamp,colFlags.datefmt))}</td>`;
@@ -540,7 +661,8 @@ function resultsTable(g){
     dfNames.forEach(n=>{const val=dfVal(m,n); r+=`<td>${val?esc(val):'—'}</td>`;});
     r+='</tr>'; body+=r;
   });
-  return `<table class="data">${cg}<thead>${h}</thead><tbody>${body}</tbody></table>`;
+  const keys=(colFlags.error?['±']:[]).concat(unitKeys(qs));
+  return `<table class="data"><thead>${h}</thead><tbody>${body}</tbody></table>`+abbrKey(keys);
 }
 
 function statRows(g){
@@ -554,8 +676,12 @@ function elementRows(g){
   rows.sort((a,b)=>((b.stat?b.stat.mean:0)-(a.stat?a.stat.mean:0)));   // major components first
   return rows;
 }
-// measurements per composition table before wrapping — fewer when ± is shown (wider cells) so it still fits a printed page
-function compColsPerTable(){return colFlags.error?6:8;}
+// measurements per composition table before wrapping — fewer when ± is shown (wider cells),
+// more in landscape, where the page is ~1.5× wider
+function compColsPerTable(){
+  const base=colFlags.error?6:8;
+  return toggles.orientation==='landscape'?Math.round(base*1.5):base;
+}
 function compositionReport(g){   // measurements are columns; wrap into stacked tables when there are many
   const rows=elementRows(g);
   const N=g.items.length;
@@ -566,8 +692,12 @@ function compositionReport(g){   // measurements are columns; wrap into stacked 
     if(N>per) out+=`<div class="note" style="margin-top:10px">Measurements ${start+1}–${end}</div>`;
     out+=compTableChunk(g,rows,start,end);
   }
-  if(!N) out='<p class="note">No measurements.</p>';
-  return out;
+  if(!N) return '<p class="note">No measurements.</p>';
+  const multi=g.items.length>1;
+  const keys=(colFlags.error?['±']:[])
+    .concat(multi&&colFlags.mean?['Mean']:[]).concat(multi&&colFlags.sd?['SD']:[])
+    .concat(unitKeys(rows.map(r=>r.q)));
+  return out+abbrKey(keys);
 }
 function compTableChunk(g,rows,start,end){   // one table for measurements [start,end)
   const multi=g.items.length>1;
@@ -594,7 +724,8 @@ function compTableChunk(g,rows,start,end){   // one table for measurements [star
   if(rows.length){
     rows.forEach((r,ri)=>{
       let tr=`<tr${ri===0?' class="elem-top"':''}><td class="txt">${esc(r.q.label)}</td>`;
-      for(let i=start;i<end;i++){const v=r.vals[i]; const u=(colFlags.error&&v.err!=null)?` ± ${esc(v.err)}`:''; tr+=`<td>${esc(v.disp)}${u}</td>`;}
+      for(let i=start;i<end;i++){const v=r.vals[i];
+        const u=(colFlags.error&&v.err!=null)?`<span class="pm">± ${esc(v.err)}</span>`:''; tr+=`<td>${esc(v.disp)}${u}</td>`;}
       if(showMean) tr+=`<td>${fmt(r.stat.mean,r.q.dec)}</td>`;   // Mean/SD are over ALL measurements
       if(showSD) tr+=`<td>${fmt(r.stat.sd,r.q.dec)}</td>`;
       tr+='</tr>'; body+=tr;
@@ -607,7 +738,8 @@ function statsTable(rows){
     return `<tr><td class="txt">${esc(q.label)}</td><td>${fmt(s.mean,q.dec)}</td><td>${fmt(s.sd,q.dec)}</td>`+
       `<td>${s.rsd==null?'—':fmt(s.rsd,2)+'%'}</td><td>${fmt(s.min,q.dec)}</td><td>${fmt(s.max,q.dec)}</td><td>${s.n}</td></tr>`;
   }).join('');
-  return `<table class="data"><tr><th class="txt">Quantity</th><th>Mean</th><th>SD</th><th>RSD</th><th>Min</th><th>Max</th><th>n</th></tr>${body}</table>`;
+  return `<table class="data"><tr><th class="txt">Quantity</th><th>Mean</th><th>SD</th><th>RSD</th><th>Min</th><th>Max</th><th>n</th></tr>${body}</table>`
+    +abbrKey(['Mean','SD','RSD','Min','Max','n'].concat(unitKeys(rows.map(r=>r.q))));
 }
 
 /* ---------- charts ---------- */
@@ -623,7 +755,7 @@ function statCharts(g){   // per selected quantity: run chart + moving-range + d
     const lim=quantSpecLimits(g,q);
     out+=`<div class="chart-pair"><div class="cp-title">${esc(q.label)}</div>${spcChart(pts,s,lim,q)}</div>`;
   });
-  return out;
+  return out?out+abbrKey(['UCL','LCL','σ','RSD','n'].concat(unitKeys(qs))):'';
 }
 // application spec limits for a quantity (thickness or element), or null → caller falls back to ±3σ
 function quantSpecLimits(g,q){
@@ -743,7 +875,8 @@ function spectrumChart(items){
     g+=`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1" opacity=".85"/>`;
     legend+=`<span><i style="background:${col}"></i>${esc(m.sample)}${m.seq?` · #${esc(m.seq)}`:''}</span>`;});
   const note=many?`<div class="note" style="margin-top:4px">Showing readings #1, #${Math.floor((items.length-1)/2)+1} and #${items.length} (first, middle, last) of ${items.length}.</div>`:'';
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}">${g}</svg><div class="legend">${legend}</div>${note}`;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}">${g}</svg><div class="legend">${legend}</div>${note}`
+    +abbrKey(['cps','keV']);
 }
 
 /* ---------- printing ---------- */
@@ -755,8 +888,35 @@ window.printGroup=printGroup;
 window.addEventListener('afterprint',()=>{document.body.classList.remove('print-single');document.querySelectorAll('.report-group').forEach(el=>el.classList.remove('print-target'));});
 $('printAllBtn').onclick=()=>{document.body.classList.remove('print-single');window.print();};
 
+/* ---------- page orientation ---------- */
+// drives BOTH the on-screen page width and the real @page size, so the preview matches the PDF
+function applyOrientation(){
+  const land=toggles.orientation==='landscape';
+  document.body.classList.toggle('or-landscape',land);
+  $('pageStyle').textContent=`@page{size:A4 ${land?'landscape':'portrait'};margin:12mm}`;
+  $('or_portrait').classList.toggle('active',!land);
+  $('or_landscape').classList.toggle('active',land);
+}
+document.querySelectorAll('.orient button').forEach(b=>b.onclick=()=>{
+  toggles.orientation=b.dataset.or; saveState(); render();});
+
 /* ---------- logos ---------- */
-function readImg(input,cb){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f);}
+const LOGO_MAX=420;   // logos are stored base64 in localStorage (~5 MB cap) — downscale so 10 profiles still fit
+function shrinkImg(dataUrl,cb){
+  const img=new Image();
+  img.onload=()=>{
+    const s=Math.min(1,LOGO_MAX/Math.max(img.width,img.height));
+    if(s>=1){cb(dataUrl);return;}                       // already small enough — keep the original bytes
+    const c=document.createElement('canvas');
+    c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    let out; try{out=c.toDataURL('image/png');}catch(e){out=dataUrl;}   // PNG keeps logo transparency
+    cb(out.length<dataUrl.length?out:dataUrl);
+  };
+  img.onerror=()=>cb(dataUrl);
+  img.src=dataUrl;
+}
+function readImg(input,cb){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=()=>shrinkImg(r.result,cb);r.readAsDataURL(f);}
 function showLogo(prevId,data){const p=$(prevId);if(data){p.src=data;p.hidden=false;}else p.hidden=true;}
 $('companyLogoBtn').onclick=()=>$('companyLogoInput').click();
 $('custLogoBtn').onclick=()=>$('custLogoInput').click();
@@ -767,10 +927,78 @@ $('custLogoInput').onchange=()=>readImg($('custLogoInput'),d=>{customerLogo=d;sh
 $('companyLogoClear').onclick=()=>{companyLogo=null;showLogo('companyLogoPrev',null);saveState();render();};
 $('custLogoClear').onclick=()=>{customerLogo=null;showLogo('custLogoPrev',null);saveState();render();};
 
+/* ---------- company / customer profiles ----------
+   The form fields are always the live values used in the report. A profile is a named snapshot:
+   picking one from the dropdown copies it into the fields. Nothing is applied until you pick it. */
+const PROF={
+  company:{fields:{name:'coname',addr:'coaddr'},fallback:'Company',
+    getLogo:()=>companyLogo,setLogo:v=>{companyLogo=v;showLogo('companyLogoPrev',v);}},
+  customer:{fields:{name:'customer',addr:'custaddr',job:'job'},fallback:'Customer',
+    getLogo:()=>customerLogo,setLogo:v=>{customerLogo=v;showLogo('custLogoPrev',v);}}
+};
+const profLabel=(k,p)=>p.label||p.name||PROF[k].fallback;
+function profSnapshot(k){const o={};Object.entries(PROF[k].fields).forEach(([f,s])=>o[f]=settings[s]||'');o.logo=PROF[k].getLogo();return o;}
+function profApply(k,p){Object.entries(PROF[k].fields).forEach(([f,s])=>settings[s]=p[f]||'');PROF[k].setLogo(p.logo||null);}
+function profFind(k){return profiles[k].find(p=>p.id===activeProf[k])||null;}
+// true when the fields have been edited away from the profile the dropdown is showing
+function profDirty(k){
+  const p=profFind(k); if(!p)return false;
+  const s=profSnapshot(k);
+  return Object.keys(PROF[k].fields).some(f=>(p[f]||'')!==(s[f]||''))||(p.logo||null)!==(s.logo||null);
+}
+function profState(k){   // keep the dropdown honest about whether it still describes the fields below
+  const el=$(`p_${k}_state`);
+  el.textContent=!profFind(k)&&profiles[k].length ? 'Fields below are not from a saved profile.'
+    : profDirty(k) ? '● Edited — “Update” overwrites the profile, “Save as new” keeps both.' : '';
+  $(`p_${k}_save`).disabled=!profFind(k);
+}
+function refreshProf(k){
+  const sel=$(`p_${k}_sel`), list=profiles[k];
+  const none=`<option value=""${activeProf[k]?'':' selected'}>${list.length?'— none selected —':'(none saved yet — use “Save as new”)'}</option>`;
+  sel.innerHTML=none+list.map(p=>`<option value="${esc(p.id)}"${p.id===activeProf[k]?' selected':''}>${esc(profLabel(k,p))}</option>`).join('');
+  ['ren','del'].forEach(a=>$(`p_${k}_${a}`).disabled=!profFind(k));
+  profState(k);
+}
+function profCommit(k){refreshProf(k);syncFields();saveState();render();}
+['company','customer'].forEach(k=>{
+  $(`p_${k}_sel`).onchange=()=>{
+    const p=profiles[k].find(x=>x.id===$(`p_${k}_sel`).value);
+    if(p){activeProf[k]=p.id;profApply(k,p);}
+    else activeProf[k]=null;              // "— none selected —": keep the fields, just stop claiming a profile
+    profCommit(k);
+  };
+  $(`p_${k}_new`).onclick=()=>{
+    const snap=profSnapshot(k);
+    const label=(prompt('Name for this profile:',snap.name||'')||'').trim();
+    if(!label)return;                                    // empty / cancelled → do nothing
+    const p=Object.assign({id:newId(),label},snap);
+    profiles[k].push(p); activeProf[k]=p.id; profCommit(k);
+  };
+  $(`p_${k}_save`).onclick=()=>{
+    const p=profFind(k); if(!p)return;
+    if(!confirm(`Overwrite “${profLabel(k,p)}” with the fields below?`))return;
+    Object.assign(p,profSnapshot(k)); profCommit(k);
+  };
+  $(`p_${k}_ren`).onclick=()=>{
+    const p=profFind(k); if(!p)return;
+    const label=(prompt('New name:',profLabel(k,p))||'').trim();
+    if(!label)return;
+    p.label=label; profCommit(k);
+  };
+  $(`p_${k}_del`).onclick=()=>{
+    const p=profFind(k); if(!p)return;
+    if(!confirm(`Delete the saved profile “${profLabel(k,p)}”? The fields below stay as they are.`))return;
+    profiles[k]=profiles[k].filter(x=>x.id!==p.id);
+    activeProf[k]=null;   // fields stay put, and no OTHER profile gets blamed for them
+    profCommit(k);
+  };
+});
+
 /* ---------- bind fields + toggles ---------- */
 const FIELD_MAP={f_coname:'coname',f_coaddr:'coaddr',f_customer:'customer',f_custaddr:'custaddr',f_job:'job',f_title:'title',f_calname:'calname',f_operator:'operator',f_notes:'notes'};
 Object.entries(FIELD_MAP).forEach(([id,key])=>{$(id).oninput=()=>{settings[key]=$(id).value;saveState();render();};});
-[['t_company','company'],['t_customer','customer'],['t_stats','stats'],['t_statchart','statchart'],['t_spectrum','spectrum']].forEach(([id,k])=>$(id).onchange=()=>{toggles[k]=$(id).checked;saveState();render();});
+[['t_company','company'],['t_customer','customer'],['t_device','device'],['t_stats','stats'],
+ ['t_statchart','statchart'],['t_spectrum','spectrum'],['t_abbr','abbr']].forEach(([id,k])=>$(id).onchange=()=>{toggles[k]=$(id).checked;saveState();render();});
 $('t_tablewidth').onchange=()=>{toggles.tablewidth=$('t_tablewidth').value;saveState();render();};
 [['c_reading','reading'],['c_sample','sample'],['c_coll','coll'],['c_date','date'],['c_time','time'],['c_error','error'],['c_passfail','passfail'],['c_mean','mean'],['c_sd','sd']].forEach(([id,k])=>$(id).onchange=()=>{colFlags[k]=$(id).checked;saveState();render();});
 $('c_datefmt').onchange=()=>{colFlags.datefmt=$('c_datefmt').value;saveState();render();};
@@ -786,11 +1014,16 @@ const drop=$('drop');
 drop.addEventListener('drop',e=>{if(e.dataTransfer.files.length)loadFiles(e.dataTransfer.files);});
 
 /* ---------- init: restore ---------- */
-function applyStateToUI(){
+function syncFields(){   // push the live settings back into the sidebar inputs (after loading a profile)
   Object.entries(FIELD_MAP).forEach(([id,key])=>$(id).value=settings[key]||'');
-  $('t_company').checked=toggles.company;$('t_customer').checked=toggles.customer;
+}
+function applyStateToUI(){
+  syncFields();
+  $('t_company').checked=toggles.company;$('t_customer').checked=toggles.customer;$('t_device').checked=toggles.device;
   $('t_stats').checked=toggles.stats;$('t_statchart').checked=toggles.statchart;$('t_spectrum').checked=toggles.spectrum;
+  $('t_abbr').checked=toggles.abbr;
   $('t_tablewidth').value=toggles.tablewidth;
+  refreshProf('company');refreshProf('customer');
   $('c_reading').checked=colFlags.reading;$('c_sample').checked=colFlags.sample;$('c_coll').checked=colFlags.coll;
   $('c_date').checked=colFlags.date;$('c_datefmt').value=colFlags.datefmt;
   $('c_time').checked=colFlags.time;$('c_timefmt').value=colFlags.timefmt;$('c_error').checked=colFlags.error;
