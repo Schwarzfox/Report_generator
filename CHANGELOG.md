@@ -14,6 +14,26 @@ Bump the version in the same commit as the change and add a line here.
 
 ---
 
+## 2.4.0
+
+**Element symbols and units keep their casing — a real bug.** The table header rule carried
+`text-transform:uppercase`, which rendered `Sn (wt%)` as `SN (WT%)` and `μm` as `ΜM` — a capital
+Mu, indistinguishable from an M. Headers are no longer case-transformed; they are larger and bolder
+instead.
+
+**Spectrum reverted to a direct overlay.** The 2.3.0 waterfall offset was worse: a shifted spectrum
+is no longer a spectrum, and repeats exist to be compared peak-to-peak. Traces sit on top of each
+other again and are separated by opacity — 0.55, 0.75, 0.95, lightest drawn first — with dash
+patterns backing that up. The peak-accurate bucketing from 2.2.0 is kept.
+
+**Instrument line moved into the header row**, centred between the company and customer blocks,
+which were leaving that space empty. Two lines: model, then serial.
+
+**Tables tightened** — row padding cut from 8px to 4px vertical.
+
+**Keys trimmed further.** `±` is self-evidently the error, and `Mean`, `Min` and `Max` explain
+themselves. Statistics now glosses only SD, RSD and n; the results table usually shows no key at all.
+
 ## 2.3.0
 
 **Corrected the uncertainty wording.** The key claimed `±` was 1σ. The JSON only names those fields
