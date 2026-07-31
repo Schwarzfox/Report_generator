@@ -116,8 +116,8 @@
   /* Permanent instrument line — always printed. Letterhead treatment: centred and letterspaced,
      the same size as the title so it reads as a header without outranking what the report IS. */
   /* fixed instrument identity — always printed, centred between the two parties */
-  .rg-device .dev{display:block;font-size:15px;font-weight:700;color:var(--ink);line-height:1.25}
-  .rg-device .sn{display:block;font-size:12.5px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:1px}
+  .rg-device .dev{display:block;font-size:19px;font-weight:700;color:var(--ink);line-height:1.2}
+  .rg-device .sn{display:block;font-size:14px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:2px}
   .rg-device .dev+.dev{margin-top:6px}
   /* abbreviation key — small, right-aligned, closes out the section it belongs to */
   .abbr{font-size:9.5px;line-height:1.5;color:#8b95a3;text-align:right;margin:-12px 0 18px;padding-left:18%}
@@ -157,7 +157,6 @@
   .legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
   .legend svg.lgl{flex:none;overflow:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .rg-notes{white-space:pre-wrap;font-size:12.5px;border-top:1px solid var(--line);margin-top:16px;padding-top:10px}
-  .rg-cal-foot{font-size:12px;color:var(--muted);margin-top:14px;border-top:1px solid var(--line);padding-top:8px}
   .selector{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;padding:14px 16px;max-width:940px;margin:0 auto 18px}
   .sel-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
   .sel-btn{display:flex;align-items:center;gap:8px}
@@ -379,7 +378,7 @@
      PATCH  a fix or a tweak, nothing new.
    Bump this in the same commit as the change, and add a line to CHANGELOG.md. Shown in the
    sidebar only — the sidebar is hidden when printing, so it never lands in a customer's PDF. */
-const APP_VERSION='2.4.0';
+const APP_VERSION='2.5.0';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
@@ -387,16 +386,16 @@ const SPEC_OVERLAY_MAX=6;
 /* Overlaid spectra of the same sample sit almost exactly on top of each other, so colour alone
    cannot separate them. Each trace gets its own colour AND dash pattern AND opacity: the solid
    one reads through the dashed one, and the dotted one drawn last leaves gaps to see through. */
-/* Overlaid directly on top of each other and separated by ALPHA: the lightest trace is drawn
-   first and the most opaque last, so where they coincide you still see each one through the next.
-   Dash patterns back the alpha up for the case where two traces coincide exactly. */
+/* Overlaid directly on top of each other, fully opaque. Separation comes from hue and from the
+   dash pattern: each successive trace is drawn over the last but leaves gaps, so the ones beneath
+   stay visible through them. Drawn solid → dashed → dotted for that reason. No green. */
 const SPEC_STYLES=[
-  {color:'#1f6feb',dash:'',        alpha:0.55,width:1.1},   // solid blue, lightest
-  {color:'#d1342f',dash:'6 3',     alpha:0.75,width:1.2},   // dashed red
-  {color:'#12894f',dash:'1.5 3',   alpha:0.95,width:1.5},   // dotted green, most opaque
-  {color:'#8a3ffc',dash:'7 2 2 2', alpha:0.75,width:1.2},   // dash-dot violet
-  {color:'#e8590c',dash:'3 3',     alpha:0.75,width:1.2},   // dashed orange
-  {color:'#0a7d8c',dash:'1 4',     alpha:0.95,width:1.5}    // sparse dot teal
+  {color:'#1a4fb5',dash:'',        width:1.2},   // solid navy
+  {color:'#c81e3a',dash:'7 4',     width:1.3},   // dashed crimson
+  {color:'#e07000',dash:'2 3.5',   width:1.6},   // dotted amber
+  {color:'#6d28d9',dash:'9 3 2 3', width:1.3},   // dash-dot violet
+  {color:'#0e7490',dash:'4 4',     width:1.3},   // dashed cyan
+  {color:'#57534e',dash:'1 4',     width:1.6}    // sparse dot stone
 ];
 const specStyle=i=>SPEC_STYLES[i%SPEC_STYLES.length];
 
@@ -485,7 +484,8 @@ function extract(d){
   const dfN=d.dataFieldNames||[], dfV=d.dataFieldValues||[];
   const hw=md.hwSerialNumbers||{};
   return {
-    ulid:d.ulid||'', sample:d.sampleName||'(unnamed)', seq:d.sequenceNumber||'', lotId:d.lotId||'',
+    ulid:d.ulid||'', sample:d.sampleName||'(unnamed)', lotId:d.lotId||'',
+    seq:(Number(d.sequenceNumber)>0?String(d.sequenceNumber):''),   // '-1' is the instrument's "not set" placeholder
     device:{type:hw.deviceType||'',sn:hw.deviceSn||''},
     programUlid:d.measurementProgramUlid||'',   // non-empty = run via an application
     dataFields:dfN.map((n,i)=>({name:n,value:dfV[i]!=null?dfV[i]:''})),
@@ -639,7 +639,7 @@ function deviceBand(g){
 const ABBR={
   '±':'statistical measurement uncertainty, as reported by the instrument',
   'Mean':'arithmetic average','SD':'standard deviation','RSD':'relative standard deviation (SD ÷ mean)',
-  'Min':'lowest value','Max':'highest value','n':'number of measurements','σ':'standard deviation (sigma)',
+  'Min':'lowest value','Max':'highest value','n':'number of measurements',
   'UCL':'upper control limit','LCL':'lower control limit','MR':'moving range (change between consecutive readings)',
   'cps':'counts per second','keV':'kilo-electronvolt (X-ray photon energy)',
   // units the instrument can report — thickness and composition
@@ -737,6 +737,7 @@ function renderGroup(g,gi){
     <div class="rg-sub">
       <span>Operator: ${esc(opName||'—')}</span>
       <span>${g.items.length} measurement(s)</span>
+      <span>${g.app?'Application':'Calibration'}: <span class="rg-cal">${esc(calDisplay)}</span></span>
     </div>`;
 
   if(transposedLayout(g)){
@@ -752,7 +753,6 @@ function renderGroup(g,gi){
   if(toggles.spectrum) html+=`<div class="sect-h">Spectrum</div><div class="charts"><div class="chart-box">${spectrumChart(g.items)}</div></div>`;
 
   if(settings.notes) html+=`<div class="rg-notes"><b>Notes:</b> ${nl2(settings.notes)}</div>`;
-  html+=`<div class="rg-cal-foot">${g.app?'Application':'Calibration'}: <span class="rg-cal">${esc(calDisplay)}</span></div>`;
   html+=`<div class="no-print" style="margin-top:16px"><button class="primary" onclick="printGroup(${gi})">🖨 Print / Save this group as PDF</button></div>`;
   el.innerHTML=html; return el;
 }
@@ -862,12 +862,19 @@ function compTableChunk(g,rows,start,end){   // one table for measurements [star
   return `<table class="data"><thead>${h}</thead><tbody>${body}</tbody></table>`;
 }
 function statsTable(rows){
+  /* n lives in the section heading and is the same for every row, so a column repeating it is
+     dead weight — Range (Max − Min) says something different about each quantity instead.
+     The exception: if a quantity has missing values its n differs, and then the column earns its place. */
+  const nMax=Math.max(...rows.map(r=>r.stat.n));
+  const showN=rows.some(r=>r.stat.n!==nMax);
   const body=rows.map(r=>{const s=r.stat,q=r.q;
     return `<tr><td class="txt">${esc(q.label)}</td><td>${fmt(s.mean,q.dec)}</td><td>${fmt(s.sd,q.dec)}</td>`+
-      `<td>${s.rsd==null?'—':fmt(s.rsd,2)+'%'}</td><td>${fmt(s.min,q.dec)}</td><td>${fmt(s.max,q.dec)}</td><td>${s.n}</td></tr>`;
+      `<td>${s.rsd==null?'—':fmt(s.rsd,2)+'%'}</td><td>${fmt(s.min,q.dec)}</td><td>${fmt(s.max,q.dec)}</td>`+
+      `<td>${fmt(s.max-s.min,q.dec)}</td>${showN?`<td>${s.n}</td>`:''}</tr>`;
   }).join('');
-  return `<table class="data"><thead><tr><th class="txt">Quantity</th><th>Mean</th><th>SD</th><th>RSD</th><th>Min</th><th>Max</th><th>n</th></tr></thead><tbody>${body}</tbody></table>`
-    +abbrKey(['SD','RSD','n'].concat(unitKeys(rows.map(r=>r.q))));   // Mean/Min/Max explain themselves
+  const head=`<tr><th class="txt">Quantity</th><th>Mean</th><th>SD</th><th>RSD</th><th>Min</th><th>Max</th><th>Range</th>${showN?'<th>n</th>':''}</tr>`;
+  return `<table class="data"><thead>${head}</thead><tbody>${body}</tbody></table>`
+    +abbrKey(['SD','RSD'].concat(showN?['n']:[]).concat(unitKeys(rows.map(r=>r.q))));
 }
 
 /* ---------- charts ---------- */
@@ -883,7 +890,7 @@ function statCharts(g){   // per selected quantity: run chart + moving-range + d
     const lim=quantSpecLimits(g,q);
     out+=`<div class="chart-pair"><div class="cp-title">${esc(q.label)}</div>${spcChart(pts,s,lim,q)}</div>`;
   });
-  return out?out+abbrKey(['UCL','LCL','σ','RSD','n']):'';   // units are self-evident here — only the SPC terms need explaining
+  return out?out+abbrKey(['UCL','LCL','SD','RSD','n']):'';   // units are self-evident here — only the SPC terms need explaining
 }
 // application spec limits for a quantity (thickness or element), or null → caller falls back to ±3σ
 function quantSpecLimits(g,q){
@@ -956,7 +963,7 @@ function spcChart(pts,s,lim,q){
     let bell='';for(let i=0;i<=60;i++){const v=vmin+(vmax-vmin)*i/60,d=Math.exp(-0.5*((v-mean)/sd)**2);bell+=`${(HL+HW*d).toFixed(1)},${Y(v).toFixed(1)} `;}
     g+=`<polyline points="${bell}" fill="none" stroke="#16388f" stroke-width="1.1"/>`;
     for(let k=-4;k<=4;k++){if(!k)continue;const v=mean+k*sd;if(v<vmin||v>vmax)continue;const y=Y(v);
-      g+=`<line x1="${HL}" y1="${y.toFixed(1)}" x2="${HL+HW}" y2="${y.toFixed(1)}" stroke="#9aa4b2" stroke-dasharray="2 2"/><text x="${HL+HW+3}" y="${(y+3).toFixed(1)}" font-size="8" fill="#3a4453" font-weight="600">${k}s</text>`;}
+      g+=`<line x1="${HL}" y1="${y.toFixed(1)}" x2="${HL+HW}" y2="${y.toFixed(1)}" stroke="#9aa4b2" stroke-dasharray="2 2"/><text x="${HL+HW+3}" y="${(y+3).toFixed(1)}" font-size="8" fill="#3a4453" font-weight="600">${k>0?'+':''}${k} SD</text>`;}
     // mean (0σ) — the bell's centre, red to match the run-chart mean line they share a Y-axis with
     {const y=Y(mean);g+=`<line x1="${HL}" y1="${y.toFixed(1)}" x2="${HL+HW}" y2="${y.toFixed(1)}" stroke="#d1342f" stroke-width="1" stroke-dasharray="2 2"/><text x="${HL+HW+3}" y="${(y+3).toFixed(1)}" font-size="8" fill="#d1342f" font-weight="600">mean</text>`;}
     for(let k=0;k<=2;k++){const hx=HL+HW*k/2;g+=`<text x="${hx.toFixed(1)}" y="${(RT+RH+12).toFixed(1)}" text-anchor="middle" font-size="8" fill="#414c5d">${Math.round(maxC*k/2)}</text>`;}
@@ -967,15 +974,15 @@ function spcChart(pts,s,lim,q){
   // ----- stats block -----
   const SX=540; let sy=RT+8;
   const line=(lab,val)=>{const t=`<text x="${SX}" y="${sy}" font-size="9.5" fill="#1b2431">${lab}</text><text x="${W-8}" y="${sy}" text-anchor="end" font-size="9.5" fill="#1c2330" font-weight="600">${val}</text>`;sy+=15.5;return t;};
-  g+=line('Number',s.n);
+  g+=line('n',s.n);
   g+=line('Mean',fmt(mean,dec));
-  g+=line('Std Dev',fmt(sd,dec));
-  g+=line('% Dev (RSD)',s.rsd==null?'—':fmt(s.rsd,2)+'%');
-  g+=line('High',fmt(s.max,dec));
-  g+=line('Low',fmt(s.min,dec));
+  g+=line('SD',fmt(sd,dec));
+  g+=line('RSD',s.rsd==null?'—':fmt(s.rsd,2)+'%');
+  g+=line('Max',fmt(s.max,dec));
+  g+=line('Min',fmt(s.min,dec));
   g+=line('Range',fmt(s.max-s.min,dec));
   g+=lim?`<text x="${SX}" y="${sy+5}" font-size="8.5" fill="#12894f">Limits: application spec</text>`
-        :`<text x="${SX}" y="${sy+5}" font-size="8.5" fill="#b06a00">Limits: ±3σ (statistical)</text>`;
+        :`<text x="${SX}" y="${sy+5}" font-size="8.5" fill="#b06a00">Limits: mean ± 3 SD</text>`;
   // redraw all three frames LAST so gridlines/bars never paint over the edges — keeps a uniform border everywhere
   g+=`<rect x="${RL}" y="${RT}" width="${RW}" height="${RH}" fill="none" stroke="#6c7889" stroke-width="1.2"/>`;
   g+=`<rect x="${RL}" y="${MT}" width="${RW}" height="${MH}" fill="none" stroke="#6c7889" stroke-width="1.2"/>`;
@@ -999,7 +1006,9 @@ function spectrumChart(items){
   const W=520,H=300,padL=56,padR=14,padT=14,padB=36,iw=W-padL-padR,ih=H-padT-padB;
   const many=items.length>SPEC_OVERLAY_MAX;
   // many readings of one sample look near-identical → show 3 representatives (first, middle, last) instead of clutter
-  const shown=many?[items[0],items[Math.floor((items.length-1)/2)],items[items.length-1]]:items;
+  // keep each shown spectrum's reading number so the legend can point back at the results table
+  const pick=many?[0,Math.floor((items.length-1)/2),items.length-1]:items.map((_,i)=>i);
+  const shown=pick.map(i=>items[i]);
   const cps=m=>{const l=m.spectrum.live||1; return m.spectrum.values.map(v=>v/l);};   // counts -> counts per second
   const maxX=specMaxKeV(shown);
   let maxY=1;
@@ -1035,11 +1044,11 @@ function spectrumChart(items){
       last=val;
       pts+=`${(padL+iw*(b/NB)).toFixed(1)},${Y(val).toFixed(1)} `;
     }
-    g+=`<polyline points="${pts}" fill="none" stroke="${st.color}" stroke-width="${st.width}" opacity="${st.alpha}" stroke-linejoin="round"${dash}/>`;
+    g+=`<polyline points="${pts}" fill="none" stroke="${st.color}" stroke-width="${st.width}" stroke-linejoin="round"${dash}/>`;
     // the legend swatch is the actual line, dashes and all — a colour chip alone would not identify it
     legend+=`<span><svg class="lgl" width="22" height="9" viewBox="0 0 22 9" aria-hidden="true">`+
-      `<line x1="0.5" y1="4.5" x2="21.5" y2="4.5" stroke="${st.color}" stroke-width="${Math.max(2,st.width)}" opacity="${st.alpha}"${dash}/>`+
-      `</svg>${esc(m.sample)}${m.seq?` · #${esc(m.seq)}`:''}</span>`;});
+      `<line x1="0.5" y1="4.5" x2="21.5" y2="4.5" stroke="${st.color}" stroke-width="${Math.max(2,st.width)}"${dash}/>`+
+      `</svg>${esc(m.sample)} · #${pick[idx]+1}</span>`;});   // #N = the reading number in the results table
   const parts=[];
   if(many) parts.push(`Showing readings #1, #${Math.floor((items.length-1)/2)+1} and #${items.length} (first, middle, last) of ${items.length}.`);
   const note=parts.length?`<div class="note" style="margin-top:4px">${parts.join(' ')}</div>`:'';

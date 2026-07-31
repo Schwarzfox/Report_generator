@@ -14,6 +14,32 @@ Bump the version in the same commit as the change and add a line here.
 
 ---
 
+## 2.5.0
+
+**One notation for standard deviation: SD.** The same concept was appearing four ways — `SD` in the
+statistics table, `Std Dev` in the chart's stats block, `s` on the histogram's sigma ticks and `σ`
+in the key. Everything now reads SD: ticks are `+1 SD` / `-2 SD`, the control-limit caption is
+`Limits: mean ± 3 SD`, and the chart's stats block uses the same labels as the table (n, Mean, SD,
+RSD, Max, Min, Range).
+
+**Statistics table: `n` replaced by `Range`.** n is already in the section heading and was identical
+in every row. Range (Max − Min) says something different about each quantity. The n column comes
+back automatically if a quantity has missing values and its n genuinely differs.
+
+**Calibration / application moved from a stray footer line into the metadata sub-line** under the
+title, next to Operator and the measurement count — it is the same kind of information, and it was
+easy to miss stranded at the bottom of the last page.
+
+**Instrument line enlarged** to 19px now that the serial has its own line.
+
+**Spectrum palette reworked**: opaque navy, crimson and amber — no green, no transparency.
+Separation comes from hue plus dash pattern; traces are drawn solid → dashed → dotted so the ones
+underneath show through the gaps.
+
+**Spectrum legend labels by reading number** (`#1`, `#25`, `#50`), matching the results table.
+`sequenceNumber` is `-1` in most files — an instrument placeholder for "not set" — and was being
+printed literally as `#-1`.
+
 ## 2.4.0
 
 **Element symbols and units keep their casing — a real bug.** The table header rule carried
