@@ -23,6 +23,9 @@
   .side{background:#eef1f5;border-right:1px solid #d7dde6;padding:18px;overflow-y:auto;max-height:100vh}
   .side h1{font-size:17px}
   .side .sub{color:var(--muted);font-size:12px;margin-bottom:14px}
+  /* version badge — lives in the sidebar, which is display:none when printing, so it never reaches the PDF */
+  .ver{font-size:11px;font-weight:600;color:var(--muted);background:var(--chip);border:1px solid var(--line);
+    border-radius:20px;padding:2px 8px;vertical-align:middle;letter-spacing:.02em}
   .card{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px;background:#fff}
   .card h3{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
   .drop{border:2px dashed #c4ccd6;border-radius:10px;padding:16px;text-align:center;color:var(--muted);background:#fbfcfe}
@@ -66,11 +69,12 @@
   .rg-title{font-size:20px;font-weight:700;margin:14px 0 2px}
   .rg-sub{font-size:12.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
   .rg-cal{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-weight:600;color:var(--ink)}
-  /* permanent instrument band: which device (and serial) produced these numbers */
-  .rg-device{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;background:var(--resbg);border:1px solid #c3d6f2;border-radius:7px;
-    padding:6px 11px;margin:10px 0 4px;font-size:11.5px;color:#2b3a4f;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .rg-device b{font-size:12.5px;color:var(--res)}
-  .rg-device .sn{font-variant-numeric:tabular-nums}
+  /* permanent instrument band — always printed, sits above the report title */
+  .rg-device{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline;background:var(--resbg);border:1px solid #c3d6f2;border-radius:8px;
+    padding:10px 14px;margin:14px 0 4px;color:#2b3a4f;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .rg-device .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+  .rg-device .dev{font-size:20px;font-weight:700;color:var(--res);line-height:1.15}
+  .rg-device .sn{font-size:15px;font-weight:600;color:var(--res);font-variant-numeric:tabular-nums}
   /* abbreviation key — small, right-aligned, closes out the section it belongs to */
   .abbr{font-size:9.5px;line-height:1.5;color:#8b95a3;text-align:right;margin:-12px 0 18px;padding-left:18%}
   .abbr b{font-weight:600;color:#6b7480}
@@ -78,8 +82,8 @@
   body.tw-fit table.data{width:auto}                                   /* Fit content: shrink-wrap */
   table.data th,table.data td{border:1px solid #bcc7d3;padding:7px 10px;text-align:left;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   table.data tr.elem-top td{border-top:2px solid #c9d2dd}
-  table.data th.val{text-align:right}
-  table.data td.val{text-align:right;font-weight:600}                    /* result numbers: right-aligned so digits line up, emphasised */
+  table.data th.val,table.data td.val{text-align:left}
+  table.data td.val{font-weight:600}                                     /* result numbers carry the report — emphasised */
   /* uncertainty lives in the SAME cell as its value — smaller and muted, so it reads as secondary */
   .pm{font-size:.8em;font-weight:400;color:#7b8593;margin-left:4px;white-space:nowrap}
   table.data th{background:#cbdcef;color:#14315c;font-weight:700}
@@ -132,7 +136,7 @@
 <body>
 <div class="app">
   <aside class="side">
-    <h1>XRF Report Generator</h1>
+    <h1>XRF Report Generator <span class="ver" id="appVer"></span></h1>
     <div class="sub">Load measurement JSON → grouped by calibration → one PDF per group. Everything is saved for next time.</div>
 
     <div class="card">
@@ -187,11 +191,10 @@
 
     <div class="card">
       <h3>3 · Sections</h3>
-      <div class="toggle"><input type="checkbox" id="t_device" checked><label for="t_device">Instrument header (device + serial)</label></div>
       <div class="toggle" id="row_stats"><input type="checkbox" id="t_stats" checked><label for="t_stats">Statistics table</label></div>
       <div class="toggle"><input type="checkbox" id="t_statchart"><label for="t_statchart">Statistics chart</label></div>
       <div class="toggle"><input type="checkbox" id="t_spectrum" checked><label for="t_spectrum">Spectrum chart</label></div>
-      <div class="toggle"><input type="checkbox" id="t_abbr" checked><label for="t_abbr">Abbreviation key under each section</label></div>
+      <div class="note" style="margin-top:8px">The instrument header and the abbreviation keys are always printed.</div>
     </div>
 
     <div class="card">
@@ -274,6 +277,14 @@
 
 <script>
 "use strict";
+/* Version — MAJOR.MINOR.PATCH
+     MAJOR  the printed report changes shape (sections move, columns restructured) — a v2 PDF
+            does not look like a v1 PDF, so an archived report is identifiable by its major.
+     MINOR  a new capability that leaves existing reports looking the same (a new option, a new field).
+     PATCH  a fix or a tweak, nothing new.
+   Bump this in the same commit as the change, and add a line to CHANGELOG.md. Shown in the
+   sidebar only — the sidebar is hidden when printing, so it never lands in a customer's PDF. */
+const APP_VERSION='2.0.0';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
@@ -284,7 +295,7 @@ let MEAS=[];
 let activeKey=null;   // selected type when multiple are loaded
 let companyLogo=null, customerLogo=null;
 const settings={coname:'',coaddr:'',customer:'',custaddr:'',job:'',title:'',calname:'',operator:'',notes:''};
-const toggles={company:true,customer:true,device:true,stats:true,statchart:false,spectrum:true,abbr:true,
+const toggles={company:true,customer:true,stats:true,statchart:false,spectrum:true,
   tablewidth:'full',        // 'full' | 'fit'
   orientation:'portrait'};  // 'portrait' | 'landscape'
 /* Saved company/customer profiles. The form fields are always the LIVE values; a profile is a
@@ -362,8 +373,7 @@ function extract(d){
   const hw=md.hwSerialNumbers||{};
   return {
     ulid:d.ulid||'', sample:d.sampleName||'(unnamed)', seq:d.sequenceNumber||'', lotId:d.lotId||'',
-    device:{type:hw.deviceType||'',sn:hw.deviceSn||'',tube:hw.xrtType||'',
-      calDate:md.instrumentCalibrationDate||'',checkDate:md.healthCheckDate||''},
+    device:{type:hw.deviceType||'',sn:hw.deviceSn||''},
     programUlid:d.measurementProgramUlid||'',   // non-empty = run via an application
     dataFields:dfN.map((n,i)=>({name:n,value:dfV[i]!=null?dfV[i]:''})),
     limits:md.applicationControlLimitsResults||[],
@@ -402,6 +412,7 @@ function loadState(){
   delete toggles.compact;
   if(toggles.tablewidth==='balanced') toggles.tablewidth='full';             // v2 dropped the Balanced preset
   if(toggles.orientation!=='landscape') toggles.orientation='portrait';
+  delete toggles.device; delete toggles.abbr;   // both became mandatory in 2.0 — drop the stale saved flags
   // v1 → v2: a single company/customer becomes the first saved profile, so nothing the user typed is lost
   const P=s.profiles||{};
   profiles.company=Array.isArray(P.company)?P.company:[];
@@ -499,17 +510,13 @@ function groupDevices(g){
     const k=d.type+'|'+d.sn; if(!seen.has(k))seen.set(k,d);});
   return [...seen.values()];
 }
+// Always rendered — the instrument that produced the numbers is not an optional detail.
 function deviceBand(g){
   const ds=groupDevices(g); if(!ds.length)return '';
-  const chips=ds.map(d=>`<b>${esc(d.type||'Instrument')}</b>${d.sn?`<span class="sn"> · S/N ${esc(d.sn)}</span>`:''}`).join('&nbsp;&nbsp;+&nbsp;&nbsp;');
-  let extra='';
-  if(ds.length===1){   // instrument-level provenance is only meaningful when there is exactly one instrument
-    const d=ds[0];
-    if(d.tube) extra+=`<span>X-ray tube: ${esc(d.tube)}</span>`;
-    if(d.calDate) extra+=`<span>Instrument calibration: ${esc(fmtDateOnly(d.calDate,colFlags.datefmt))}</span>`;
-  }
-  const lead=ds.length>1?'Measured with multiple instruments:':'Measured with';
-  return `<div class="rg-device"><span>${lead} ${chips}</span>${extra}</div>`;
+  const chips=ds.map(d=>`<span class="dev">${esc(d.type||'Instrument')}</span>${d.sn?`<span class="sn">S/N ${esc(d.sn)}</span>`:''}`)
+    .join('<span class="sn">+</span>');
+  const lead=ds.length>1?'Measured with (multiple instruments)':'Measured with';
+  return `<div class="rg-device"><span class="lbl">${lead}</span>${chips}</div>`;
 }
 
 /* ---------- abbreviation key ---------- */
@@ -528,7 +535,6 @@ const ABBR={
 };
 // build the key from what the section ACTUALLY rendered — a report with no SPC chart must not explain UCL/LCL
 function abbrKey(keys){
-  if(!toggles.abbr)return '';
   const seen=new Set(), out=[];
   (keys||[]).forEach(k=>{if(k&&ABBR[k]&&!seen.has(k)){seen.add(k);out.push(`<b>${esc(k)}</b> = ${esc(ABBR[k])}`);}});
   return out.length?`<div class="abbr">${out.join(' &nbsp;·&nbsp; ')}</div>`:'';
@@ -605,12 +611,11 @@ function renderGroup(g,gi){
       </div>`:'<div class="party right"></div>';
   const head=(toggles.company||toggles.customer)?`<div class="rg-head">${coBlock}${cuBlock}</div>`:'';
   const calDisplay=(settings.calname||'').trim()||groupLabel(g);
-  let html=head+`<div class="rg-title">${esc(settings.title||'XRF Measurement Report')}</div>
+  let html=head+deviceBand(g)+`<div class="rg-title">${esc(settings.title||'XRF Measurement Report')}</div>
     <div class="rg-sub">
       <span>Operator: ${esc(opName||'—')}</span>
       <span>${g.items.length} measurement(s)</span>
     </div>`;
-  if(toggles.device) html+=deviceBand(g);
 
   if(transposedLayout(g)){
     html+=`<div class="sect-h">Results${g.items.length>1?` (n = ${g.items.length})`:''}</div>`+compositionReport(g);
@@ -758,7 +763,7 @@ function statCharts(g){   // per selected quantity: run chart + moving-range + d
     const lim=quantSpecLimits(g,q);
     out+=`<div class="chart-pair"><div class="cp-title">${esc(q.label)}</div>${spcChart(pts,s,lim,q)}</div>`;
   });
-  return out?out+abbrKey(['UCL','LCL','σ','RSD','n'].concat(unitKeys(qs))):'';
+  return out?out+abbrKey(['UCL','LCL','σ','RSD','n']):'';   // units are self-evident here — only the SPC terms need explaining
 }
 // application spec limits for a quantity (thickness or element), or null → caller falls back to ±3σ
 function quantSpecLimits(g,q){
@@ -1000,8 +1005,7 @@ function profCommit(k){refreshProf(k);syncFields();saveState();render();}
 /* ---------- bind fields + toggles ---------- */
 const FIELD_MAP={f_coname:'coname',f_coaddr:'coaddr',f_customer:'customer',f_custaddr:'custaddr',f_job:'job',f_title:'title',f_calname:'calname',f_operator:'operator',f_notes:'notes'};
 Object.entries(FIELD_MAP).forEach(([id,key])=>{$(id).oninput=()=>{settings[key]=$(id).value;saveState();render();};});
-[['t_company','company'],['t_customer','customer'],['t_device','device'],['t_stats','stats'],
- ['t_statchart','statchart'],['t_spectrum','spectrum'],['t_abbr','abbr']].forEach(([id,k])=>$(id).onchange=()=>{toggles[k]=$(id).checked;saveState();render();});
+[['t_company','company'],['t_customer','customer'],['t_stats','stats'],['t_statchart','statchart'],['t_spectrum','spectrum']].forEach(([id,k])=>$(id).onchange=()=>{toggles[k]=$(id).checked;saveState();render();});
 $('t_tablewidth').onchange=()=>{toggles.tablewidth=$('t_tablewidth').value;saveState();render();};
 [['c_reading','reading'],['c_sample','sample'],['c_coll','coll'],['c_date','date'],['c_time','time'],['c_error','error'],['c_passfail','passfail'],['c_mean','mean'],['c_sd','sd']].forEach(([id,k])=>$(id).onchange=()=>{colFlags[k]=$(id).checked;saveState();render();});
 $('c_datefmt').onchange=()=>{colFlags.datefmt=$('c_datefmt').value;saveState();render();};
@@ -1022,9 +1026,8 @@ function syncFields(){   // push the live settings back into the sidebar inputs 
 }
 function applyStateToUI(){
   syncFields();
-  $('t_company').checked=toggles.company;$('t_customer').checked=toggles.customer;$('t_device').checked=toggles.device;
+  $('t_company').checked=toggles.company;$('t_customer').checked=toggles.customer;
   $('t_stats').checked=toggles.stats;$('t_statchart').checked=toggles.statchart;$('t_spectrum').checked=toggles.spectrum;
-  $('t_abbr').checked=toggles.abbr;
   $('t_tablewidth').value=toggles.tablewidth;
   refreshProf('company');refreshProf('customer');
   $('c_reading').checked=colFlags.reading;$('c_sample').checked=colFlags.sample;$('c_coll').checked=colFlags.coll;
@@ -1033,6 +1036,7 @@ function applyStateToUI(){
   $('c_passfail').checked=colFlags.passfail;$('c_mean').checked=colFlags.mean;$('c_sd').checked=colFlags.sd;
   showLogo('companyLogoPrev',companyLogo);showLogo('custLogoPrev',customerLogo);
 }
+$('appVer').textContent='v'+APP_VERSION;
 loadState(); applyStateToUI(); buildQuantCols();
 render();
 </script>
