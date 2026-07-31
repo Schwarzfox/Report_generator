@@ -85,8 +85,14 @@
   .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
   .grpcount{color:var(--muted);font-size:13px}
   /* preview page width tracks the chosen paper orientation (A4 minus 12mm margins → 186mm vs 273mm) */
-  .report-group{background:#fff;border:1px solid var(--line);border-radius:12px;padding:26px;margin:0 auto 22px;max-width:940px;box-shadow:0 1px 3px rgba(20,30,50,.05)}
-  body.or-landscape .report-group,body.or-landscape .selector{max-width:1380px}
+  /* The preview IS the page. A4 minus the 12mm print margins = 186mm portrait / 273mm landscape.
+     Matching it exactly means on-screen measurements are valid for print — they were not before,
+     and text sized against a 888px preview was being clipped at 702px on paper. */
+  .report-group{background:#fff;border:1px solid var(--line);border-radius:8px;padding:0;margin:0 auto 22px;
+    width:186mm;max-width:100%;box-shadow:0 2px 10px rgba(20,30,50,.10)}
+  body.or-landscape .report-group{width:273mm}
+  .selector{max-width:186mm}
+  body.or-landscape .selector{max-width:273mm}
   .orient{display:flex;gap:8px;margin-top:6px}
   .orient button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 6px}
   .orient button.active{background:var(--brand);color:#fff;border-color:var(--brand)}
@@ -120,9 +126,12 @@
   /* fixed instrument identity — always printed, centred between the two parties */
   /* Sized by fitDeviceLine() at render: the largest size that still keeps the name on ONE line,
      so it is always as big as the column allows and never wraps to a third row. */
-  .rg-device .dev{display:block;font-size:20px;font-weight:700;color:var(--ink);line-height:1.18;white-space:nowrap;overflow:hidden}
+  /* NEVER clip this: overflow:hidden + nowrap once truncated the instrument name mid-word on a
+     printed report. Wrapping is merely ugly; truncation is wrong. fitDeviceLine() shrinks it until
+     it fits on one line, and wrapping is the safety net if that ever fails. */
+  .rg-device .dev{display:block;font-size:20px;font-weight:700;color:var(--ink);line-height:1.18;overflow-wrap:break-word}
   .rg-device .sn{display:block;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:3px}
-  .rg-device .dev+.dev{margin-top:6px}
+  .rg-device .sn+.dev{margin-top:8px}   /* second instrument, when a report spans two */
   /* abbreviation key — small, right-aligned, closes out the section it belongs to */
   .abbr{font-size:9.5px;line-height:1.5;color:#8b95a3;text-align:right;margin:-12px 0 18px;padding-left:18%}
   .abbr b{font-weight:600;color:#6b7480}
@@ -176,7 +185,7 @@
     .app{display:block}
     .side,.toolbar,.no-print{display:none!important}
     .main{padding:0;max-height:none;overflow:visible}
-    .report-group{border:none;box-shadow:none;max-width:none;margin:0;padding:0}
+    .report-group{border:none;box-shadow:none;width:auto;max-width:none;margin:0;padding:0}
     .report-group + .report-group{page-break-before:always}
     body.print-single .report-group{display:none;page-break-before:auto}
     body.print-single .report-group.print-target{display:block}
@@ -383,7 +392,7 @@
      PATCH  a fix or a tweak, nothing new.
    Bump this in the same commit as the change, and add a line to CHANGELOG.md. Shown in the
    sidebar only — the sidebar is hidden when printing, so it never lands in a customer's PDF. */
-const APP_VERSION='2.7.0';
+const APP_VERSION='2.7.1';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
@@ -646,12 +655,12 @@ function groupDevices(g){
     const k=d.type+'|'+d.sn; if(!seen.has(k))seen.set(k,d);});
   return [...seen.values()];
 }
-const MAKER='Hitachi', MODEL_SUFFIX='Coating Analyzer';   // FT-series instruments are Hitachi High-Tech
+const MAKER='HITACHI', MODEL_SUFFIX='Coating Analyzer';   // FT-series instruments are Hitachi High-Tech
 // Always rendered — the instrument that produced the numbers is not an optional detail.
 function deviceBand(g){
   const ds=groupDevices(g); if(!ds.length)return '';
-  const names=ds.map(d=>`<span class="dev">${MAKER} ${esc(d.type||'instrument')} ${MODEL_SUFFIX}`+
-    (d.sn?`<span class="sn">SN ${esc(d.sn)}</span>`:'')+`</span>`).join('');
+  const names=ds.map(d=>`<span class="dev">${MAKER} ${esc(d.type||'instrument')} ${MODEL_SUFFIX}</span>`+
+    (d.sn?`<span class="sn">SN ${esc(d.sn)}</span>`:'')).join('');
   return `<div class="rg-device">${names}</div>`;
 }
 
@@ -1134,17 +1143,43 @@ $('custLogoClear').onclick=()=>{customerLogo=null;showLogo('custLogoPrev',null);
 
 /* Shrink-to-fit the instrument name: start at the largest size and step down until it fits the
    column on one line. Keeps it as big as the page allows without ever wrapping to a third row. */
+/* Size the instrument name to the largest that still fits on ONE line of the printed page.
+   Measured against an off-screen probe set to the exact printed column width — NOT against the
+   live element — so the result is identical whatever the window size, and printing from a small
+   window cannot produce a different fit than printing from a large one.
+   History: this used to measure the live element and hide the overflow, which silently truncated
+   the name mid-word on paper. The element can no longer clip; wrapping is the safety net. */
+const HEAD_GAP=14, MID_FR=1.7, PAGE_MM={portrait:186,landscape:273};   // must match .rg-head / @page
 function fitDeviceLine(){
+  const els=document.querySelectorAll('.rg-device .dev');
+  if(!els.length||!els[0].getBoundingClientRect) return;
   const land=document.body.classList&&document.body.classList.contains('or-landscape');
-  const MAX=land?30:24, MIN=13;
-  document.querySelectorAll('.rg-device .dev').forEach(el=>{
-    if(typeof el.scrollWidth!=='number'||!el.clientWidth) return;   // not a real browser layout
+  const pagePx=PAGE_MM[land?'landscape':'portrait']*96/25.4;
+  const midPx=(pagePx-2*HEAD_GAP)*MID_FR/(1+MID_FR+1);   // the grid's middle column, on paper
+  const MAX=land?28:22, MIN=12, LH=1.18;
+  let probe=document.getElementById('__devProbe');
+  if(!probe){
+    probe=document.createElement('div'); probe.id='__devProbe';
+    probe.style.cssText='position:absolute;left:-9999px;top:0;visibility:hidden;font-weight:700;'+
+      'line-height:'+LH+';white-space:normal;overflow-wrap:break-word';
+    document.body.appendChild(probe);
+  }
+  probe.style.width=midPx+'px';
+  els.forEach(el=>{
+    probe.style.fontFamily=(el.style&&getComputedStyle?getComputedStyle(el).fontFamily:'')||'';
+    probe.textContent=el.textContent;
     let size=MAX, guard=0;
+    for(;;){
+      probe.style.fontSize=size+'px';
+      if(probe.scrollHeight<=size*LH*1.5 || size<=MIN || guard++>50) break;   // <=1 line
+      size-=0.5;
+    }
     el.style.fontSize=size+'px';
-    while(el.scrollWidth>el.clientWidth+1 && size>MIN && guard++<60){size-=0.5;el.style.fontSize=size+'px';}
-    const sn=el.querySelector('.sn'); if(sn) sn.style.fontSize=Math.max(11,size*0.66).toFixed(1)+'px';
+    const sn=el.parentNode&&el.parentNode.querySelector?el.parentNode.querySelector('.sn'):null;
+    if(sn) sn.style.fontSize=Math.max(10.5,size*0.66).toFixed(1)+'px';
   });
 }
+window.addEventListener('beforeprint',fitDeviceLine);
 
 /* ---------- collapsible sidebar cards ----------
    Each card remembers whether it was open. The summary carries a short tag saying what the

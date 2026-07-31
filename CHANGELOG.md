@@ -14,6 +14,32 @@ Bump the version in the same commit as the change and add a line here.
 
 ---
 
+## 2.7.1
+
+**Fixes a printing defect that truncated the instrument name mid-word.** 2.7.0 sized the name by
+measuring the live element in the preview and hid any overflow. The preview was 888px wide while
+A4 portrait prints at 702px — 21% narrower — so a name fitted on screen overflowed on paper and
+`overflow:hidden` silently cut it off. At 20px the name needed 313px in a 310px column; three
+pixels of overflow were enough to amputate the last word.
+
+Three independent changes so it cannot recur:
+
+- **The preview is now the page.** `.report-group` is exactly 186mm (portrait) / 273mm (landscape),
+  matching A4 minus the print margins, so what is measured on screen is the width that prints.
+- **The element can no longer clip.** `overflow:hidden` and `white-space:nowrap` are gone. If a fit
+  is ever wrong the name wraps — ugly, but never wrong.
+- **The fit no longer depends on the window.** Sizing is measured against an off-screen probe set to
+  the exact printed column width, so printing from a small window gives the same result as printing
+  from a large one. Re-run on `beforeprint`.
+
+Verified against Helvetica-Bold metrics at real A4 widths: portrait settles at 19.5px (306px in a
+310px column), landscape at 28px (439px in 461px), both on one line.
+
+**`HITACHI` is capitalised.**
+
+**Also fixed:** the serial span was nested inside the name span, so any height-based fit would have
+measured two lines and shrunk the name to its minimum. It is now a sibling.
+
 ## 2.7.0
 
 **Report text is per group — this was a bug.** Title, operator, notes and the calibration override
