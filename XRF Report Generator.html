@@ -36,7 +36,8 @@
   .colsub,.colgrp .gh,.colgrp.gh{font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 3px;padding-bottom:3px;border-bottom:1px solid var(--line)}
   #colCard .colsub:first-of-type{margin-top:6px}
   /* preview */
-  .main{padding:22px;overflow-y:auto;max-height:100vh}
+  /* overflow-x matters in landscape: the page is wider than the preview column on smaller screens */
+  .main{padding:22px;overflow-y:auto;overflow-x:auto;max-height:100vh}
   .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
   .grpcount{color:var(--muted);font-size:13px}
   /* preview page width tracks the chosen paper orientation (A4 minus 12mm margins → 186mm vs 273mm) */
@@ -679,8 +680,10 @@ function elementRows(g){
 // measurements per composition table before wrapping — fewer when ± is shown (wider cells),
 // more in landscape, where the page is ~1.5× wider
 function compColsPerTable(){
+  // A4 landscape is 1.47× wider than portrait, but the row-label column doesn't scale with it,
+  // so 1.4 is the honest multiplier — overshooting here means a table that runs off the page.
   const base=colFlags.error?6:8;
-  return toggles.orientation==='landscape'?Math.round(base*1.5):base;
+  return toggles.orientation==='landscape'?Math.round(base*1.4):base;
 }
 function compositionReport(g){   // measurements are columns; wrap into stacked tables when there are many
   const rows=elementRows(g);
