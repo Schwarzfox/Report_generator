@@ -14,6 +14,37 @@ Bump the version in the same commit as the change and add a line here.
 
 ---
 
+## 2.3.0
+
+**Corrected the uncertainty wording.** The key claimed `±` was 1σ. The JSON only names those fields
+`thicknessStatisticalError` / `compoundMassFractionsStatisticalErrors` and states no coverage
+factor, and it cannot be derived: total spectrum counts imply 0.23% on pure Poisson while the
+reported error is 5.7%, because it propagates through the FP model from net peak counts. It now
+reads "statistical measurement uncertainty, as reported by the instrument". If Hitachi documents
+the factor, put it back.
+
+**Spectrum: traces are offset vertically (waterfall).** Repeats of one sample are near-identical,
+so overlaying them exactly produced a single unreadable smear. Each trace is now lifted by a
+constant slice of the plot height, with a thin white casing underneath so it stays legible where it
+crosses another. Colours are fully opaque and further apart in hue — the old transparency was
+blending three traces into one muddy colour exactly where they overlapped. Chart is larger
+(520×300). The axis belongs to the lowest trace, and the note says so.
+
+**Log scale removed.**
+
+**Instrument line**: `Hitachi FT230 Coating Analyzer (SN 150086)` in the same face as the rest of
+the report, sentence case, no letterspacing. Still centred, still always printed.
+
+**Only the fixed header is centred** — the report title and its operator line are left-aligned
+again, with the rest of the page.
+
+**Tables**: faint internal vertical rules added, zebra striping on every table regardless of length,
+and the statistics and composition tables gained `thead`/`tbody` so striping starts on the same row
+everywhere (and their headers now repeat across printed pages).
+
+**Eight tints**, spread far enough apart in hue to tell apart: Plain, Blue, Graphite, Teal, Green,
+Amber, Violet, Rose. Slate is gone — it was indistinguishable from Blue and Graphite.
+
 ## 2.2.1
 
 Explicit `.card[hidden]{display:none}` so the Columns card cannot leak a header row before files

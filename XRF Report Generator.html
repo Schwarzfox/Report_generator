@@ -9,16 +9,25 @@
     --bg:#f4f6f8; --panel:#ffffff; --ink:#1c2330; --muted:#5b6472; --line:#dfe4ea;
     --brand:#1f6feb; --brand-ink:#fff; --res:#0b3d91; --resbg:#eaf2ff; --chip:#eef2f7;
   }
-  /* Table tints. Each theme sets the same four slots, so the structure above never changes —
-     only the colours do. --t-edge is the heavy rule under the header and at the table's foot. */
-  :root,body.tint-plain{                                          /* Plain — fully white */
-    --t-rule:#e2e6eb; --t-edge:#9aa4b2; --t-head-bg:transparent; --t-head-ink:#1c2330; --t-zebra:#f7f8fa}
-  body.tint-blue{                                                 /* Blue — the original palette, calmed */
-    --t-rule:#dbe6f3; --t-edge:#8fb3de; --t-head-bg:#eaf2ff; --t-head-ink:#14315c; --t-zebra:#f4f8fd}
-  body.tint-graphite{                                             /* Graphite — neutral, no hue */
-    --t-rule:#e0e2e6; --t-edge:#9ba1a9; --t-head-bg:#f1f2f4; --t-head-ink:#22262c; --t-zebra:#f7f8f9}
-  body.tint-slate{                                                /* Slate — muted blue-grey, softest */
-    --t-rule:#dde2e9; --t-edge:#94a3b5; --t-head-bg:#eef1f5; --t-head-ink:#2b3a4f; --t-zebra:#f6f8fa}
+  /* Table tints. Each theme sets the same five slots, so the structure never changes — only
+     the colours do. --t-edge is the heavy rule under the header; --t-vrule is the faint internal
+     vertical line. Hues are spread far enough apart to be told apart at a glance. */
+  :root,body.tint-plain{      /* Plain — fully white */
+    --t-rule:#e2e6eb; --t-vrule:#eef0f3; --t-edge:#9aa4b2; --t-head-bg:transparent; --t-head-ink:#1c2330; --t-zebra:#f7f8fa}
+  body.tint-blue{             /* Blue */
+    --t-rule:#dbe6f3; --t-vrule:#e9f0f9; --t-edge:#7fa8db; --t-head-bg:#dfebfb; --t-head-ink:#14315c; --t-zebra:#f2f7fd}
+  body.tint-graphite{         /* Graphite — neutral, no hue */
+    --t-rule:#dfe1e5; --t-vrule:#ebecee; --t-edge:#8d939b; --t-head-bg:#e8eaed; --t-head-ink:#22262c; --t-zebra:#f5f6f7}
+  body.tint-teal{             /* Teal */
+    --t-rule:#cfe6e3; --t-vrule:#e3f0ef; --t-edge:#5fa39c; --t-head-bg:#d8ede9; --t-head-ink:#0d4f4a; --t-zebra:#eef7f6}
+  body.tint-green{            /* Green */
+    --t-rule:#d6e5cf; --t-vrule:#e7efe3; --t-edge:#79a468; --t-head-bg:#e0efd9; --t-head-ink:#254d1c; --t-zebra:#f1f7ee}
+  body.tint-amber{            /* Amber */
+    --t-rule:#ecdfc4; --t-vrule:#f4ecdb; --t-edge:#c19646; --t-head-bg:#fbeed2; --t-head-ink:#6b4507; --t-zebra:#fdf7ea}
+  body.tint-violet{           /* Violet */
+    --t-rule:#ddd4ee; --t-vrule:#ebe5f6; --t-edge:#8f74c4; --t-head-bg:#e9e0fa; --t-head-ink:#3f2273; --t-zebra:#f5f1fc}
+  body.tint-rose{             /* Rose */
+    --t-rule:#efd3da; --t-vrule:#f6e5e9; --t-edge:#c4707f; --t-head-bg:#fbdfe5; --t-head-ink:#7a1230; --t-zebra:#fdf1f4}
   *{box-sizing:border-box}
   body{margin:0;font:14px/1.45 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
   h1,h2,h3,h4{margin:0 0 .4em}
@@ -98,20 +107,20 @@
   .party.right img{margin-left:auto}
   .party .nm{font-weight:700;font-size:14px}
   .party .addr{font-size:11.5px;color:var(--muted);white-space:pre-line}
-  .rg-title{font-size:20px;font-weight:700;margin:14px 0 2px;text-align:center}
-  .rg-sub{font-size:12.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;justify-content:center}
+  .rg-title{font-size:20px;font-weight:700;margin:14px 0 2px}          /* user's own title — left, like the rest of the page */
+  .rg-sub{font-size:12.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
   .rg-cal{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-weight:600;color:var(--ink)}
   /* Permanent instrument line — always printed. Letterhead treatment: centred and letterspaced,
      the same size as the title so it reads as a header without outranking what the report IS. */
-  .rg-device{font-size:20px;font-weight:500;color:var(--ink);letter-spacing:.13em;text-transform:uppercase;
-    text-align:center;margin:18px 0 0;padding-bottom:12px;border-bottom:1.5px solid var(--ink)}
+  .rg-device{font-size:21px;font-weight:700;color:var(--ink);text-align:center;
+    margin:18px 0 0;padding-bottom:12px;border-bottom:1.5px solid var(--ink)}
   .rg-device .sn{font-variant-numeric:tabular-nums}
   /* abbreviation key — small, right-aligned, closes out the section it belongs to */
   .abbr{font-size:9.5px;line-height:1.5;color:#8b95a3;text-align:right;margin:-12px 0 18px;padding-left:18%}
   .abbr b{font-weight:600;color:#6b7480}
   /* ---- tables ----
      One separation mechanism, not three: horizontal rules only (no vertical borders), roomy cells,
-     and zebra striping applied ONLY to tables long enough to lose your place in (see ZEBRA_MIN). */
+     faint internal vertical rules, and zebra striping on every table. */
   table.data{width:100%;border-collapse:collapse;margin:10px 0 18px;font-size:12.5px}
   body.tw-fit table.data{width:auto}                                   /* Fit content: shrink-wrap */
   table.data th,table.data td{border:0;border-bottom:1px solid var(--t-rule);padding:8px 12px;
@@ -119,7 +128,8 @@
   table.data th{background:var(--t-head-bg);color:var(--t-head-ink);font-weight:600;font-size:10.5px;
     text-transform:uppercase;letter-spacing:.055em;border-bottom:1.5px solid var(--t-edge)}
   table.data tbody tr:last-child td{border-bottom:1.5px solid var(--t-edge)}   /* tbody-scoped: must never reach a header row */
-  table.data.zebra tbody tr:nth-child(even) td{background:var(--t-zebra)}
+  table.data tbody tr:nth-child(even) td{background:var(--t-zebra)}
+  table.data th+th,table.data td+td{border-left:1px solid var(--t-vrule)}   /* faint internal verticals */
   table.data tr.elem-top td{border-top:1.5px solid var(--t-edge)}
   table.data th.val,table.data td.val{text-align:left}
   table.data td.val{font-weight:600;color:var(--ink)}                    /* result numbers carry the report */
@@ -210,7 +220,11 @@
               <option value="plain">Plain (white)</option>
               <option value="blue">Blue</option>
               <option value="graphite">Graphite</option>
-              <option value="slate">Slate</option>
+              <option value="teal">Teal</option>
+              <option value="green">Green</option>
+              <option value="amber">Amber</option>
+              <option value="violet">Violet</option>
+              <option value="rose">Rose</option>
             </select></div>
         </div>
       </div>
@@ -225,7 +239,7 @@
         <div id="quantCols"></div>
         <div class="toggle" id="row_mean"><input type="checkbox" id="c_mean" checked><label for="c_mean">Mean (repeats)</label></div>
         <div class="toggle" id="row_sd"><input type="checkbox" id="c_sd" checked><label for="c_sd">SD (repeats)</label></div>
-        <div class="toggle"><input type="checkbox" id="c_error" checked><label for="c_error">Uncertainty (± , inside the value cell)</label></div>
+        <div class="toggle"><input type="checkbox" id="c_error" checked><label for="c_error">Uncertainty (±)</label></div>
         <div class="colsub">Other information</div>
         <div class="toggle"><input type="checkbox" id="c_passfail" checked><label for="c_passfail">Pass / Fail (control limits)</label></div>
         <div class="toggle"><input type="checkbox" id="c_coll" checked><label for="c_coll">Collimator</label></div>
@@ -254,7 +268,6 @@
         <div class="toggle" id="row_stats"><input type="checkbox" id="t_stats" checked><label for="t_stats">Statistics table</label></div>
         <div class="toggle"><input type="checkbox" id="t_statchart"><label for="t_statchart">Statistics chart</label></div>
         <div class="toggle"><input type="checkbox" id="t_spectrum" checked><label for="t_spectrum">Spectrum chart</label></div>
-        <div class="toggle" id="row_speclog" style="margin-left:22px"><input type="checkbox" id="t_speclog"><label for="t_speclog">…on a log scale</label></div>
         <div class="note" style="margin-top:8px">The instrument header and the abbreviation keys are always printed.</div>
       </div>
     </details>
@@ -360,22 +373,23 @@
      PATCH  a fix or a tweak, nothing new.
    Bump this in the same commit as the change, and add a line to CHANGELOG.md. Shown in the
    sidebar only — the sidebar is hidden when printing, so it never lands in a customer's PDF. */
-const APP_VERSION='2.2.1';
+const APP_VERSION='2.3.0';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
 const SPEC_OVERLAY_MAX=6;
-const ZEBRA_MIN=8;   // striping only helps once a table is long enough to lose your place in
 /* Overlaid spectra of the same sample sit almost exactly on top of each other, so colour alone
    cannot separate them. Each trace gets its own colour AND dash pattern AND opacity: the solid
    one reads through the dashed one, and the dotted one drawn last leaves gaps to see through. */
+/* Fully opaque and far apart in hue. Transparency was making three traces blend into one muddy
+   colour exactly where they overlapped — the opposite of what it was meant to achieve. */
 const SPEC_STYLES=[
-  {color:'#1f6feb',dash:'',        alpha:0.70,width:1.2},   // solid blue
-  {color:'#d1342f',dash:'6 3',     alpha:0.80,width:1.3},   // dashed red
-  {color:'#12894f',dash:'1.5 3',   alpha:0.95,width:1.6},   // dotted green
-  {color:'#8a3ffc',dash:'7 2 2 2', alpha:0.80,width:1.2},   // dash-dot purple
-  {color:'#e8590c',dash:'3 3',     alpha:0.80,width:1.2},   // fine dash orange
-  {color:'#0a7d8c',dash:'1 4',     alpha:0.95,width:1.6}    // sparse dot teal
+  {color:'#0b4fd0',dash:'',        width:1.3},   // solid blue
+  {color:'#d61f26',dash:'7 3',     width:1.4},   // dashed red
+  {color:'#0a8f3c',dash:'2 3',     width:1.6},   // dotted green
+  {color:'#7b2fd4',dash:'8 2 2 2', width:1.3},   // dash-dot violet
+  {color:'#e06c00',dash:'4 3',     width:1.4},   // dashed orange
+  {color:'#00868f',dash:'1 4',     width:1.7}    // sparse dot teal
 ];
 const specStyle=i=>SPEC_STYLES[i%SPEC_STYLES.length];
 
@@ -384,11 +398,11 @@ let MEAS=[];
 let activeKey=null;   // selected type when multiple are loaded
 let companyLogo=null, customerLogo=null;
 const settings={coname:'',coaddr:'',customer:'',custaddr:'',job:'',title:'',calname:'',operator:'',notes:''};
-const toggles={company:true,customer:true,stats:true,statchart:false,spectrum:true,speclog:false,
+const toggles={company:true,customer:true,stats:true,statchart:false,spectrum:true,
   tablewidth:'full',        // 'full' | 'fit'
-  tint:'plain',             // 'plain' | 'blue' | 'graphite' | 'slate'
+  tint:'plain',             // see TINTS
   orientation:'portrait'};  // 'portrait' | 'landscape'
-const TINTS=['plain','blue','graphite','slate'];
+const TINTS=['plain','blue','graphite','teal','green','amber','violet','rose'];
 const cardOpen={};   // card id -> bool, so the panel reopens the way you left it
 /* Saved company/customer profiles. The form fields are always the LIVE values; a profile is a
    named snapshot you can recall. Selecting one copies it into the fields (and so into the report). */
@@ -504,7 +518,8 @@ function loadState(){
   delete toggles.compact;
   if(toggles.tablewidth==='balanced') toggles.tablewidth='full';             // v2 dropped the Balanced preset
   if(toggles.orientation!=='landscape') toggles.orientation='portrait';
-  if(!TINTS.includes(toggles.tint)) toggles.tint='plain';
+  if(!TINTS.includes(toggles.tint)) toggles.tint='plain';   // 'slate' was dropped in 2.3
+  delete toggles.speclog;
   Object.assign(cardOpen,s.cardOpen||{});
   delete toggles.device; delete toggles.abbr;   // both became mandatory in 2.0 — drop the stale saved flags
   // v1 → v2: a single company/customer becomes the first saved profile, so nothing the user typed is lost
@@ -604,17 +619,18 @@ function groupDevices(g){
     const k=d.type+'|'+d.sn; if(!seen.has(k))seen.set(k,d);});
   return [...seen.values()];
 }
-const MAKER='Hitachi';   // the FT-series instruments this tool reads are all Hitachi High-Tech
+const MAKER='Hitachi', MODEL_SUFFIX='Coating Analyzer';   // FT-series instruments are Hitachi High-Tech
 // Always rendered — the instrument that produced the numbers is not an optional detail.
 function deviceBand(g){
   const ds=groupDevices(g); if(!ds.length)return '';
-  const names=ds.map(d=>`${MAKER} ${esc(d.type||'instrument')}${d.sn?` <span class="sn">SN ${esc(d.sn)}</span>`:''}`).join(' + ');
-  return `<div class="rg-device">Measured with ${names}</div>`;
+  const names=ds.map(d=>`${MAKER} ${esc(d.type||'instrument')} ${MODEL_SUFFIX}`+
+    (d.sn?` <span class="sn">(SN ${esc(d.sn)})</span>`:'')).join(' + ');
+  return `<div class="rg-device">${names}</div>`;
 }
 
 /* ---------- abbreviation key ---------- */
 const ABBR={
-  '±':'measurement uncertainty (statistical, 1σ)',
+  '±':'statistical measurement uncertainty, as reported by the instrument',
   'Mean':'arithmetic average','SD':'standard deviation','RSD':'relative standard deviation (SD ÷ mean)',
   'Min':'lowest value','Max':'highest value','n':'number of measurements','σ':'standard deviation (sigma)',
   'UCL':'upper control limit','LCL':'lower control limit','MR':'moving range (change between consecutive readings)',
@@ -764,7 +780,7 @@ function resultsTable(g){
     r+='</tr>'; body+=r;
   });
   const keys=(colFlags.error?['±']:[]).concat(unitKeys(qs));
-  return `<table class="data${g.items.length>ZEBRA_MIN?' zebra':''}"><thead>${h}</thead><tbody>${body}</tbody></table>`+abbrKey(keys);
+  return `<table class="data"><thead>${h}</thead><tbody>${body}</tbody></table>`+abbrKey(keys);
 }
 
 function statRows(g){
@@ -835,14 +851,14 @@ function compTableChunk(g,rows,start,end){   // one table for measurements [star
       tr+='</tr>'; body+=tr;
     });
   } else body+=`<tr><td class="txt" colspan="${totalCols}"><span class="note">No non-zero elements to report.</span></td></tr>`;
-  return `<table class="data${rows.length>ZEBRA_MIN?' zebra':''}">${h}${body}</table>`;
+  return `<table class="data"><thead>${h}</thead><tbody>${body}</tbody></table>`;
 }
 function statsTable(rows){
   const body=rows.map(r=>{const s=r.stat,q=r.q;
     return `<tr><td class="txt">${esc(q.label)}</td><td>${fmt(s.mean,q.dec)}</td><td>${fmt(s.sd,q.dec)}</td>`+
       `<td>${s.rsd==null?'—':fmt(s.rsd,2)+'%'}</td><td>${fmt(s.min,q.dec)}</td><td>${fmt(s.max,q.dec)}</td><td>${s.n}</td></tr>`;
   }).join('');
-  return `<table class="data${rows.length>ZEBRA_MIN?' zebra':''}"><tr><th class="txt">Quantity</th><th>Mean</th><th>SD</th><th>RSD</th><th>Min</th><th>Max</th><th>n</th></tr>${body}</table>`
+  return `<table class="data"><thead><tr><th class="txt">Quantity</th><th>Mean</th><th>SD</th><th>RSD</th><th>Min</th><th>Max</th><th>n</th></tr></thead><tbody>${body}</tbody></table>`
     +abbrKey(['Mean','SD','RSD','Min','Max','n'].concat(unitKeys(rows.map(r=>r.q))));
 }
 
@@ -971,9 +987,8 @@ function specMaxKeV(shown){
   });
   return Math.max(5,Math.ceil((hi*1.06)/5)*5);   // round up to a tidy 5 keV tick
 }
-const LOG_DECADES=4;     // how far below the peak a log axis reaches
 function spectrumChart(items){
-  const W=440,H=240,padL=52,padR=12,padT=12,padB=34,iw=W-padL-padR,ih=H-padT-padB;
+  const W=520,H=300,padL=56,padR=14,padT=14,padB=36,iw=W-padL-padR,ih=H-padT-padB;
   const many=items.length>SPEC_OVERLAY_MAX;
   // many readings of one sample look near-identical → show 3 representatives (first, middle, last) instead of clutter
   const shown=many?[items[0],items[Math.floor((items.length-1)/2)],items[items.length-1]]:items;
@@ -981,26 +996,27 @@ function spectrumChart(items){
   const maxX=specMaxKeV(shown);
   let maxY=1;
   shown.forEach(m=>{const v=cps(m); for(let c=0;c<v.length;c++) if(v[c]>maxY) maxY=v[c];});
-  const log=!!toggles.speclog;
-  // On a linear axis a 300× dynamic range flattens every minor element into the baseline;
-  // the log axis spans LOG_DECADES below the peak so trace peaks become visible.
-  const loY=maxY/Math.pow(10,LOG_DECADES);
-  const frac=v=>log?(v<=loY?0:Math.log10(v/loY)/LOG_DECADES):v/maxY;
-  const Y=v=>padT+ih-ih*Math.max(0,Math.min(1,frac(v)));
+  /* Repeats of one sample are near-identical, so overlaying them exactly produces one thick
+     smear you cannot read. Each trace is lifted by a fixed slice of the plot height instead —
+     the standard waterfall treatment — so every trace is separately visible no matter how
+     closely they agree. The vertical axis then belongs to the bottom trace; the others are
+     shifted by a known, constant amount and are there for shape comparison. */
+  const nsh=shown.length;
+  const OFF=nsh>1?Math.min(0.13,0.34/(nsh-1)):0;     // lift per trace, as a fraction of plot height
+  const usable=1-OFF*(nsh-1);                        // room left for the traces themselves
+  const Y=(v,idx)=>padT+ih-ih*(Math.max(0,Math.min(1,v/maxY))*usable+idx*OFF);
   let g='';
-  const ticks=log?LOG_DECADES:4;
-  for(let k=0;k<=ticks;k++){
-    const y=padT+ih-ih*k/ticks;
-    const val=log?loY*Math.pow(10,k):maxY*k/4;
-    g+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="#c6d0db"/>`+
-       `<text x="${padL-5}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#414c5d">${log?axLabel(val):Math.round(val)}</text>`;}
-  for(let k=0;k<=5;k++){const x=padL+iw*k/5;g+=`<text x="${x}" y="${H-14}" text-anchor="middle" font-size="9" fill="#414c5d">${(maxX*k/5).toFixed(0)}</text>`;}
-  g+=`<text x="${padL+iw/2}" y="${H-2}" text-anchor="middle" font-size="9" fill="#1b2431">Energy (keV)</text>`;
-  g+=`<text x="11" y="${padT+ih/2}" text-anchor="middle" font-size="9" fill="#1b2431" transform="rotate(-90 11 ${padT+ih/2})">Intensity (cps${log?', log':''})</text>`;
+  for(let k=0;k<=4;k++){
+    const y=Y(maxY*k/4,0);
+    g+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="#ced7e1"/>`+
+       `<text x="${padL-5}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9.5" fill="#414c5d">${Math.round(maxY*k/4)}</text>`;}
+  for(let k=0;k<=5;k++){const x=padL+iw*k/5;g+=`<text x="${x}" y="${H-15}" text-anchor="middle" font-size="9.5" fill="#414c5d">${(maxX*k/5).toFixed(0)}</text>`;}
+  g+=`<text x="${padL+iw/2}" y="${H-2}" text-anchor="middle" font-size="10" fill="#1b2431">Energy (keV)</text>`;
+  g+=`<text x="12" y="${padT+ih/2}" text-anchor="middle" font-size="10" fill="#1b2431" transform="rotate(-90 12 ${padT+ih/2})">Intensity (cps)</text>`;
   let legend='';
   const NB=Math.round(iw);   // one bucket per horizontal pixel of the viewBox
   shown.forEach((m,idx)=>{const v=cps(m); if(!v.length)return;const st=specStyle(idx);
-    const dash=st.dash?` stroke-dasharray="${st.dash}" stroke-linecap="round"`:'';
+    const dash=st.dash?` stroke-dasharray="${st.dash}"`:'';
     /* Bucket by MAXIMUM, never by sampling. XRF peaks are 3-5 channels wide, so taking every
        Nth channel misses peak apexes — it under-reported this data's main peak by 13% and made
        identical repeats draw different shapes depending on where the sampling grid happened to land. */
@@ -1015,14 +1031,19 @@ function spectrumChart(items){
     for(let b=0;b<NB;b++){
       const val=bins[b]<0?last:bins[b];   // empty bucket (more pixels than channels) → hold the previous value
       last=val;
-      pts+=`${(padL+iw*(b/NB)).toFixed(1)},${Y(val).toFixed(1)} `;
+      pts+=`${(padL+iw*(b/NB)).toFixed(1)},${Y(val,idx).toFixed(1)} `;
     }
-    g+=`<polyline points="${pts}" fill="none" stroke="${st.color}" stroke-width="${st.width}" opacity="${st.alpha}"${dash}/>`;
+    // a thin white casing under each trace keeps it legible where it crosses another one
+    g+=`<polyline points="${pts}" fill="none" stroke="#fff" stroke-width="${(st.width+1.6).toFixed(1)}" opacity=".85" stroke-linejoin="round"/>`;
+    g+=`<polyline points="${pts}" fill="none" stroke="${st.color}" stroke-width="${st.width}" stroke-linejoin="round"${dash}/>`;
     // the legend swatch is the actual line, dashes and all — a colour chip alone would not identify it
     legend+=`<span><svg class="lgl" width="22" height="9" viewBox="0 0 22 9" aria-hidden="true">`+
-      `<line x1="0.5" y1="4.5" x2="21.5" y2="4.5" stroke="${st.color}" stroke-width="${Math.max(1.6,st.width)}" opacity="${st.alpha}"${dash}/>`+
+      `<line x1="0.5" y1="4.5" x2="21.5" y2="4.5" stroke="${st.color}" stroke-width="${Math.max(2,st.width)}"${dash}/>`+
       `</svg>${esc(m.sample)}${m.seq?` · #${esc(m.seq)}`:''}</span>`;});
-  const note=many?`<div class="note" style="margin-top:4px">Showing readings #1, #${Math.floor((items.length-1)/2)+1} and #${items.length} (first, middle, last) of ${items.length}.</div>`:'';
+  const parts=[];
+  if(many) parts.push(`Showing readings #1, #${Math.floor((items.length-1)/2)+1} and #${items.length} (first, middle, last) of ${items.length}.`);
+  if(OFF) parts.push('Traces are offset vertically so near-identical spectra stay separable; the axis applies to the lowest trace.');
+  const note=parts.length?`<div class="note" style="margin-top:4px">${parts.join(' ')}</div>`:'';
   return `<svg class="chart" viewBox="0 0 ${W} ${H}">${g}</svg><div class="legend">${legend}</div>${note}`
     +abbrKey(['cps','keV']);
 }
@@ -1165,7 +1186,7 @@ function profCommit(k){refreshProf(k);syncFields();saveState();render();}
 /* ---------- bind fields + toggles ---------- */
 const FIELD_MAP={f_coname:'coname',f_coaddr:'coaddr',f_customer:'customer',f_custaddr:'custaddr',f_job:'job',f_title:'title',f_calname:'calname',f_operator:'operator',f_notes:'notes'};
 Object.entries(FIELD_MAP).forEach(([id,key])=>{$(id).oninput=()=>{settings[key]=$(id).value;saveState();render();};});
-[['t_company','company'],['t_customer','customer'],['t_stats','stats'],['t_statchart','statchart'],['t_spectrum','spectrum'],['t_speclog','speclog']].forEach(([id,k])=>$(id).onchange=()=>{toggles[k]=$(id).checked;saveState();render();});
+[['t_company','company'],['t_customer','customer'],['t_stats','stats'],['t_statchart','statchart'],['t_spectrum','spectrum']].forEach(([id,k])=>$(id).onchange=()=>{toggles[k]=$(id).checked;saveState();render();});
 $('t_tablewidth').onchange=()=>{toggles.tablewidth=$('t_tablewidth').value;saveState();render();};
 $('t_tint').onchange=()=>{toggles.tint=$('t_tint').value;saveState();render();};
 [['c_reading','reading'],['c_sample','sample'],['c_coll','coll'],['c_date','date'],['c_time','time'],['c_error','error'],['c_passfail','passfail'],['c_mean','mean'],['c_sd','sd']].forEach(([id,k])=>$(id).onchange=()=>{colFlags[k]=$(id).checked;saveState();render();});
@@ -1191,7 +1212,6 @@ function applyStateToUI(){
   $('t_stats').checked=toggles.stats;$('t_statchart').checked=toggles.statchart;$('t_spectrum').checked=toggles.spectrum;
   $('t_tablewidth').value=toggles.tablewidth;
   $('t_tint').value=toggles.tint;
-  $('t_speclog').checked=toggles.speclog;
   refreshProf('company');refreshProf('customer');
   $('c_reading').checked=colFlags.reading;$('c_sample').checked=colFlags.sample;$('c_coll').checked=colFlags.coll;
   $('c_date').checked=colFlags.date;$('c_datefmt').value=colFlags.datefmt;
