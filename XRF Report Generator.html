@@ -103,7 +103,7 @@
   /* company | instrument | customer — the instrument sits in what used to be dead space */
   /* company | instrument | customer. align-items:start makes the two logos share a top edge —
      centring them made identical logos sit at different heights whenever one block had more lines. */
-  .rg-head{display:grid;grid-template-columns:1fr 1.25fr 1fr;align-items:start;gap:18px;
+  .rg-head{display:grid;grid-template-columns:1fr 1.7fr 1fr;align-items:start;gap:14px;
     border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:6px}
   .party{min-width:0}
   .party.mid{text-align:center;align-self:center}
@@ -114,16 +114,14 @@
   .party .addr{font-size:11.5px;color:var(--muted);white-space:pre-line}
   .rg-title{font-size:20px;font-weight:700;margin:14px 0 2px}          /* user's own title — left, like the rest of the page */
   .rg-sub{font-size:12.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
-  .rg-cal{font-weight:600;color:var(--ink)}
+  .rg-cal{color:var(--ink)}
   /* Permanent instrument line — always printed. Letterhead treatment: centred and letterspaced,
      the same size as the title so it reads as a header without outranking what the report IS. */
   /* fixed instrument identity — always printed, centred between the two parties */
-  /* Portrait's middle column is too narrow for 22px — the name ran to three lines. Two lines fit
-     at 18px; landscape has the width to carry the larger size. */
-  .rg-device .dev{display:block;font-size:18px;font-weight:700;color:var(--ink);line-height:1.18}
-  .rg-device .sn{display:block;font-size:13.5px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:3px}
-  body.or-landscape .rg-device .dev{font-size:22px}
-  body.or-landscape .rg-device .sn{font-size:15px}
+  /* Sized by fitDeviceLine() at render: the largest size that still keeps the name on ONE line,
+     so it is always as big as the column allows and never wraps to a third row. */
+  .rg-device .dev{display:block;font-size:20px;font-weight:700;color:var(--ink);line-height:1.18;white-space:nowrap;overflow:hidden}
+  .rg-device .sn{display:block;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:3px}
   .rg-device .dev+.dev{margin-top:6px}
   /* abbreviation key — small, right-aligned, closes out the section it belongs to */
   .abbr{font-size:9.5px;line-height:1.5;color:#8b95a3;text-align:right;margin:-12px 0 18px;padding-left:18%}
@@ -162,7 +160,7 @@
   .legend span{display:inline-flex;align-items:center;gap:5px}
   .legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
   .legend svg.lgl{flex:none;overflow:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .rg-notes{white-space:pre-wrap;font-size:12.5px;border-top:1px solid var(--line);margin-top:16px;padding-top:10px}
+  .rg-notes{white-space:pre-wrap;font-size:12.5px;border-bottom:1px solid var(--line);margin:0 0 14px;padding-bottom:10px}
   .selector{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;padding:14px 16px;max-width:940px;margin:0 auto 18px}
   .sel-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
   .sel-btn{display:flex;align-items:center;gap:8px}
@@ -211,8 +209,23 @@
       </div>
     </details>
 
+    <details class="card" id="card_report" open>
+      <summary>2 · Report text<span class="tag" id="tag_report"></span></summary>
+      <div class="cbody">
+        <div class="note" id="textScope" style="margin-bottom:6px"></div>
+        <label class="fld">Report title <span class="pos">top</span></label>
+        <input type="text" id="f_title" value="XRF Coating Thickness Report">
+        <label class="fld">Operator <span class="pos">under the title</span></label>
+        <input type="text" id="f_operator" placeholder="(from file if blank)">
+        <label class="fld">Notes <span class="pos">under the title</span></label>
+        <textarea id="f_notes" placeholder="Free notes at the bottom of every report"></textarea>
+        <label class="fld">Calibration name <span class="pos">footer</span></label>
+        <input type="text" id="f_calname" placeholder="(detected name)">
+      </div>
+    </details>
+
     <details class="card" id="card_page" open>
-      <summary>2 · Page &amp; table<span class="tag" id="tag_page"></span></summary>
+      <summary>3 · Page &amp; table<span class="tag" id="tag_page"></span></summary>
       <div class="cbody">
         <label class="fld">Orientation</label>
         <div class="orient">
@@ -242,7 +255,7 @@
     </details>
 
     <details class="card" id="card_cols" hidden>
-      <summary>3 · Columns<span class="tag">top→bottom = left→right</span></summary>
+      <summary>4 · Columns<span class="tag">top→bottom = left→right</span></summary>
       <div class="cbody">
         <div class="colsub">Reading &amp; sample</div>
         <div class="toggle"><input type="checkbox" id="c_reading" checked><label for="c_reading">Reading #</label></div>
@@ -274,7 +287,7 @@
     </details>
 
     <details class="card" id="card_sections" open>
-      <summary>4 · Sections<span class="tag" id="tag_sections"></span></summary>
+      <summary>5 · Sections<span class="tag" id="tag_sections"></span></summary>
       <div class="cbody">
         <div class="toggle" id="row_stats"><input type="checkbox" id="t_stats" checked><label for="t_stats">Statistics table</label></div>
         <div class="toggle"><input type="checkbox" id="t_statchart"><label for="t_statchart">Statistics chart</label></div>
@@ -284,20 +297,6 @@
     </details>
 
     <!-- fields are listed in the order they appear on the printed page, top to bottom -->
-    <details class="card" id="card_report" open>
-      <summary>5 · Report text<span class="tag" id="tag_report"></span></summary>
-      <div class="cbody">
-        <label class="fld">Report title <span class="pos">top</span></label>
-        <input type="text" id="f_title" value="XRF Coating Thickness Report">
-        <label class="fld">Operator <span class="pos">under the title</span></label>
-        <input type="text" id="f_operator" placeholder="(from file if blank)">
-        <label class="fld">Notes <span class="pos">after the last section</span></label>
-        <textarea id="f_notes" placeholder="Free notes at the bottom of every report"></textarea>
-        <label class="fld">Calibration name <span class="pos">footer</span></label>
-        <input type="text" id="f_calname" placeholder="(detected name)">
-      </div>
-    </details>
-
     <details class="card" id="card_company">
       <summary>6 · Your company<span class="tag" id="tag_company"></span></summary>
       <div class="cbody">
@@ -384,7 +383,7 @@
      PATCH  a fix or a tweak, nothing new.
    Bump this in the same commit as the change, and add a line to CHANGELOG.md. Shown in the
    sidebar only — the sidebar is hidden when printing, so it never lands in a customer's PDF. */
-const APP_VERSION='2.6.1';
+const APP_VERSION='2.7.0';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
@@ -392,18 +391,17 @@ const SPEC_OVERLAY_MAX=6;
 /* Overlaid spectra of the same sample sit almost exactly on top of each other, so colour alone
    cannot separate them. Each trace gets its own colour AND dash pattern AND opacity: the solid
    one reads through the dashed one, and the dotted one drawn last leaves gaps to see through. */
-/* Overlaid directly on top of each other, fully opaque. Reading #1 is the reference and is painted
-   LAST so it sits in front; later readings recede behind it. Because the front trace is solid and
-   would otherwise hide the rest, everything behind it is dashed or dotted and reads through the gaps.
-   #3380ff is the same blue the statistics chart plots its readings in, so a reading looks the same
-   in both charts. #ffd166 is pale against white, so it carries extra stroke weight to compensate. */
+/* Overlaid directly on top of each other, solid and fully opaque. Reading #1 is the reference and
+   is painted LAST so it sits in front; later readings recede behind it. Where the spectra agree you
+   see only the front trace — where they diverge, the ones behind show. That divergence is the point.
+   #3380ff is the same blue the statistics chart plots its readings in. */
 const SPEC_STYLES=[
-  {color:'#3380ff',dash:'',        width:1.6},   // reading #1 — solid blue, in front (matches the SPC chart)
-  {color:'#ef476f',dash:'6 3',     width:1.4},   // dashed rose
-  {color:'#ffd166',dash:'2 3.5',   width:1.8},   // dotted amber — pale, so drawn heavier
-  {color:'#118ab2',dash:'9 3 2 3', width:1.3},   // dash-dot cerulean
-  {color:'#8338ec',dash:'4 4',     width:1.3},   // dashed violet
-  {color:'#073b4c',dash:'1 4',     width:1.5}    // sparse dot deep slate
+  {color:'#3380ff',width:1.6},   // reading #1 — in front (matches the SPC chart)
+  {color:'#ef476f',width:1.4},
+  {color:'#ffd166',width:1.8},   // pale against white, so drawn heavier
+  {color:'#118ab2',width:1.4},
+  {color:'#8338ec',width:1.4},
+  {color:'#073b4c',width:1.4}
 ];
 const specStyle=i=>SPEC_STYLES[i%SPEC_STYLES.length];
 
@@ -411,7 +409,16 @@ const specStyle=i=>SPEC_STYLES[i%SPEC_STYLES.length];
 let MEAS=[];
 let activeKey=null;   // selected type when multiple are loaded
 let companyLogo=null, customerLogo=null;
-const settings={coname:'',coaddr:'',customer:'',custaddr:'',job:'',title:'',calname:'',operator:'',notes:''};
+const settings={coname:'',coaddr:'',customer:'',custaddr:'',job:''};   // parties are shared across every report
+/* Report text is PER GROUP. Loading two calibrations means two different reports, and renaming
+   one calibration must not rename the others. A group with no text of its own starts from
+   textDefaults — the values last typed — so you don't retype the title for every group. */
+const reportText={};   // groupKey -> {title,operator,notes,calname}
+// calname is deliberately NOT in here: a calibration override names one specific group and must
+// never be inherited by another. Title, operator and notes are conveniences worth carrying over.
+const textDefaults={title:'XRF Coating Thickness Report',operator:'',notes:''};
+const TEXT_KEY=k=>k||'__none';
+function textFor(k){k=TEXT_KEY(k); if(!reportText[k])reportText[k]=Object.assign({calname:''},textDefaults); return reportText[k];}
 const toggles={company:true,customer:true,stats:true,statchart:false,spectrum:true,
   tablewidth:'full',        // 'full' | 'fit'
   tint:'plain',             // see TINTS
@@ -511,8 +518,8 @@ function storeWarn(msg){const el=$('storeWarn'); if(!el)return; el.textContent=m
 function saveState(){   // settings/config only — measurements are NOT persisted (cleared each session)
   const base={company:{name:settings.coname,addr:settings.coaddr,logo:companyLogo},
     customer:{name:settings.customer,addr:settings.custaddr,job:settings.job,logo:customerLogo},
-    report:{title:settings.title,operator:settings.operator,notes:settings.notes},
-    profiles,activeProf,toggles,cardOpen,colFlags,colState,dataCols};
+    report:{title:textDefaults.title,operator:textDefaults.operator,notes:textDefaults.notes},
+    reportText,textDefaults,profiles,activeProf,toggles,cardOpen,colFlags,colState,dataCols};
   try{localStorage.setItem('xrf_state',JSON.stringify(base)); storeWarn('');}
   catch(e){   // almost always the ~5 MB quota, blown by base64 logos — say so instead of failing silently
     storeWarn('⚠ Could not save: browser storage is full. Delete a saved profile or remove a logo, '+
@@ -526,7 +533,12 @@ function loadState(){
   companyLogo=co.logo||null; customerLogo=cu.logo||null;
   settings.coname=co.name||''; settings.coaddr=co.addr||'';
   settings.customer=cu.name||''; settings.custaddr=cu.addr||''; settings.job=cu.job||'';
-  settings.title=rp.title||settings.title; settings.operator=rp.operator||''; settings.notes=rp.notes||'';
+  Object.assign(textDefaults,s.textDefaults||{});
+  Object.assign(reportText,s.reportText||{});
+  // 2.6 and earlier kept a single shared title/operator/notes/calname — carry them in as the defaults
+  if(rp.title) textDefaults.title=rp.title;
+  if(rp.operator) textDefaults.operator=rp.operator;
+  if(rp.notes) textDefaults.notes=rp.notes;
   Object.assign(toggles,s.toggles||{}); Object.assign(colFlags,s.colFlags||{});
   Object.assign(colState,s.colState||{}); Object.assign(dataCols,s.dataCols||{});
   if(!toggles.tablewidth) toggles.tablewidth=toggles.compact?'fit':'full';   // migrate old compact flag
@@ -721,10 +733,12 @@ function render(){
   if(gs.length>1) host.appendChild(selectorBanner(gs));
   if(ag) host.appendChild(renderGroup(ag,0));
   else{const d=document.createElement('div');d.className='empty';d.innerHTML='<h2>Select a type above</h2><p>Multiple calibrations/applications were loaded. Pick one — the rest are ignored.</p>';host.appendChild(d);}
+  fitDeviceLine();   // must run after the report is in the DOM — it measures it
 }
 function renderGroup(g,gi){
   const el=document.createElement('section'); el.className='report-group'; el.dataset.gid=gi;
-  const opName=settings.operator||g.items[0].operator||'';
+  const txt=textFor(g.key);
+  const opName=txt.operator||g.items[0].operator||'';
   const coLogo=companyLogo?`<img src="${companyLogo}" alt="company">`:'';
   const cuLogo=customerLogo?`<img src="${customerLogo}" alt="customer">`:'';
   const coBlock=toggles.company?`<div class="party">${coLogo}
@@ -740,13 +754,14 @@ function renderGroup(g,gi){
   // header row: company | instrument | customer. Rendered whenever any of the three has content.
   const head=(toggles.company||toggles.customer||dev)
     ? `<div class="rg-head">${coBlock}<div class="party mid">${dev}</div>${cuBlock}</div>` : '';
-  const calDisplay=(settings.calname||'').trim()||groupLabel(g);
-  let html=head+`<div class="rg-title">${esc(settings.title||'XRF Measurement Report')}</div>
+  const calDisplay=(txt.calname||'').trim()||groupLabel(g);
+  let html=head+`<div class="rg-title">${esc(txt.title||'XRF Measurement Report')}</div>
     <div class="rg-sub">
       <span>Operator: ${esc(opName||'—')}</span>
       <span>${g.items.length} measurement(s)</span>
       <span>${g.app?'Application':'Calibration'}: <span class="rg-cal">${esc(calDisplay)}</span></span>
     </div>`;
+  if(txt.notes) html+=`<div class="rg-notes">${nl2(txt.notes)}</div>`;
 
   if(transposedLayout(g)){
     html+=`<div class="sect-h">Results${g.items.length>1?` (n = ${g.items.length})`:''}</div>`+compositionReport(g);
@@ -760,7 +775,6 @@ function renderGroup(g,gi){
   if(toggles.statchart){const sc=statCharts(g); if(sc) html+=`<div class="sect-h">Statistics charts</div>`+sc;}
   if(toggles.spectrum) html+=`<div class="sect-h">Spectrum</div><div class="charts"><div class="chart-box">${spectrumChart(g.items)}</div></div>`;
 
-  if(settings.notes) html+=`<div class="rg-notes"><b>Notes:</b> ${nl2(settings.notes)}</div>`;
   html+=`<div class="no-print" style="margin-top:16px"><button class="primary" onclick="printGroup(${gi})">🖨 Print / Save this group as PDF</button></div>`;
   el.innerHTML=html; return el;
 }
@@ -1039,7 +1053,6 @@ function spectrumChart(items){
   const traces=[];           // built in reading order, painted back-to-front below
   const NB=Math.round(iw);   // one bucket per horizontal pixel of the viewBox
   shown.forEach((m,idx)=>{const v=cps(m); if(!v.length)return;const st=specStyle(idx);
-    const dash=st.dash?` stroke-dasharray="${st.dash}" stroke-linecap="round"`:'';
     /* Bucket by MAXIMUM, never by sampling. XRF peaks are 3-5 channels wide, so taking every
        Nth channel misses peak apexes — it under-reported this data's main peak by 13% and made
        identical repeats draw different shapes depending on where the sampling grid happened to land. */
@@ -1056,10 +1069,10 @@ function spectrumChart(items){
       last=val;
       pts+=`${(padL+iw*(b/NB)).toFixed(1)},${Y(val).toFixed(1)} `;
     }
-    traces[idx]=`<polyline points="${pts}" fill="none" stroke="${st.color}" stroke-width="${st.width}" stroke-linejoin="round"${dash}/>`;
+    traces[idx]=`<polyline points="${pts}" fill="none" stroke="${st.color}" stroke-width="${st.width}" stroke-linejoin="round"/>`;
     // the legend swatch is the actual line, dashes and all — a colour chip alone would not identify it
     legend+=`<span><svg class="lgl" width="22" height="9" viewBox="0 0 22 9" aria-hidden="true">`+
-      `<line x1="0.5" y1="4.5" x2="21.5" y2="4.5" stroke="${st.color}" stroke-width="${Math.max(2,st.width)}"${dash}/>`+
+      `<line x1="0.5" y1="4.5" x2="21.5" y2="4.5" stroke="${st.color}" stroke-width="${Math.max(2,st.width)}"/>`+
       `</svg>${esc(m.sample)} · #${pick[idx]+1}</span>`;});   // #N = the reading number in the results table
   // In SVG the last thing drawn wins. Paint the highest reading first and reading #1 last, so the
   // first spectrum sits in front and the later ones recede behind it in order.
@@ -1119,6 +1132,20 @@ $('custLogoInput').onchange=()=>readImg($('custLogoInput'),d=>{customerLogo=d;sh
 $('companyLogoClear').onclick=()=>{companyLogo=null;showLogo('companyLogoPrev',null);saveState();render();};
 $('custLogoClear').onclick=()=>{customerLogo=null;showLogo('custLogoPrev',null);saveState();render();};
 
+/* Shrink-to-fit the instrument name: start at the largest size and step down until it fits the
+   column on one line. Keeps it as big as the page allows without ever wrapping to a third row. */
+function fitDeviceLine(){
+  const land=document.body.classList&&document.body.classList.contains('or-landscape');
+  const MAX=land?30:24, MIN=13;
+  document.querySelectorAll('.rg-device .dev').forEach(el=>{
+    if(typeof el.scrollWidth!=='number'||!el.clientWidth) return;   // not a real browser layout
+    let size=MAX, guard=0;
+    el.style.fontSize=size+'px';
+    while(el.scrollWidth>el.clientWidth+1 && size>MIN && guard++<60){size-=0.5;el.style.fontSize=size+'px';}
+    const sn=el.querySelector('.sn'); if(sn) sn.style.fontSize=Math.max(11,size*0.66).toFixed(1)+'px';
+  });
+}
+
 /* ---------- collapsible sidebar cards ----------
    Each card remembers whether it was open. The summary carries a short tag saying what the
    card currently holds, so a collapsed card still tells you its state at a glance. */
@@ -1132,7 +1159,10 @@ function cardTags(){
   set('tag_page',`${toggles.orientation==='landscape'?'landscape':'portrait'} · ${toggles.tint}`);
   const secs=[toggles.stats&&'stats',toggles.statchart&&'chart',toggles.spectrum&&'spectrum'].filter(Boolean);
   set('tag_sections',secs.length?secs.join(', '):'results only');
-  set('tag_report',settings.title||'untitled');
+  set('tag_report',textFor(activeKey).title||'untitled');
+  const gs=groups(), ag=activeGroup(gs);
+  set('textScope', gs.length>1 && ag
+    ? `Applies to “${groupLabel(ag,gs)}” only — each loaded type keeps its own text.` : '');
   ['company','customer'].forEach(k=>{
     const p=profFind(k), nm=(k==='company'?settings.coname:settings.customer);
     set('tag_'+k,(toggles[k]?'':'hidden · ')+(p?profLabel(k,p):(nm||'not set')));
@@ -1207,8 +1237,14 @@ function profCommit(k){refreshProf(k);syncFields();saveState();render();}
 });
 
 /* ---------- bind fields + toggles ---------- */
-const FIELD_MAP={f_coname:'coname',f_coaddr:'coaddr',f_customer:'customer',f_custaddr:'custaddr',f_job:'job',f_title:'title',f_calname:'calname',f_operator:'operator',f_notes:'notes'};
+const FIELD_MAP={f_coname:'coname',f_coaddr:'coaddr',f_customer:'customer',f_custaddr:'custaddr',f_job:'job'};
+const TEXT_MAP={f_title:'title',f_operator:'operator',f_notes:'notes',f_calname:'calname'};
 Object.entries(FIELD_MAP).forEach(([id,key])=>{$(id).oninput=()=>{settings[key]=$(id).value;saveState();render();};});
+// writes to the ACTIVE group only; also becomes the starting point for groups not yet edited
+Object.entries(TEXT_MAP).forEach(([id,key])=>{$(id).oninput=()=>{
+  textFor(activeKey)[key]=$(id).value;
+  if(key!=='calname') textDefaults[key]=$(id).value;   // see textDefaults: calname never carries over
+  saveState(); render();};});
 [['t_company','company'],['t_customer','customer'],['t_stats','stats'],['t_statchart','statchart'],['t_spectrum','spectrum']].forEach(([id,k])=>$(id).onchange=()=>{toggles[k]=$(id).checked;saveState();render();});
 $('t_tablewidth').onchange=()=>{toggles.tablewidth=$('t_tablewidth').value;saveState();render();};
 $('t_tint').onchange=()=>{toggles.tint=$('t_tint').value;saveState();render();};
@@ -1226,8 +1262,10 @@ const drop=$('drop');
 drop.addEventListener('drop',e=>{if(e.dataTransfer.files.length)loadFiles(e.dataTransfer.files);});
 
 /* ---------- init: restore ---------- */
-function syncFields(){   // push the live settings back into the sidebar inputs (after loading a profile)
+function syncFields(){   // push the live settings back into the sidebar inputs
   Object.entries(FIELD_MAP).forEach(([id,key])=>$(id).value=settings[key]||'');
+  const t=textFor(activeKey);
+  Object.entries(TEXT_MAP).forEach(([id,key])=>$(id).value=t[key]||'');
 }
 function applyStateToUI(){
   syncFields();

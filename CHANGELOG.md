@@ -14,6 +14,30 @@ Bump the version in the same commit as the change and add a line here.
 
 ---
 
+## 2.7.0
+
+**Report text is per group — this was a bug.** Title, operator, notes and the calibration override
+were single shared values, so renaming one calibration renamed every loaded type. Each group now
+keeps its own text. A group you have not edited starts from the values you last typed, so you do not
+retype the title for every type; the calibration override is deliberately excluded from that, since
+it names one specific group and must never leak into another. When more than one type is loaded the
+card says which one the fields apply to.
+
+**Notes moved under the title**, so every editable string now appears in one place on the page
+instead of one field printing at the bottom while the rest print at the top.
+
+**Report text card moved to position 2**, right after Measurement files. Cards renumbered: files,
+report text, page & table, columns, sections, company, customer.
+
+**Instrument name is auto-fitted.** Rather than one size per orientation, it now starts large and
+steps down until it fits the column on a single line — as big as the space allows, never wrapping to
+a third row. The middle column was widened and the gutters tightened to give it more room.
+
+**Calibration / application name is no longer bold.**
+
+**Spectrum lines are all solid.** Where the spectra agree you see only the front trace; where they
+diverge the ones behind show through. That divergence is the information worth seeing.
+
 ## 2.6.1
 
 Spectrum palette set to `#3380ff` / `#ef476f` / `#ffd166`. The blue is the same one the statistics
