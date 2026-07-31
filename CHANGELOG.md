@@ -14,6 +14,11 @@ Bump the version in the same commit as the change and add a line here.
 
 ---
 
+## 2.2.1
+
+Explicit `.card[hidden]{display:none}` so the Columns card cannot leak a header row before files
+are loaded, and the table's closing rule is scoped to `tbody` so it can never reach a header row.
+
 ## 2.2.0
 
 **Spectrum chart: fixed a real drawing bug.** The trace was built by taking every Nth channel to

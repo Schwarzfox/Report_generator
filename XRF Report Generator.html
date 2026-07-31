@@ -38,6 +38,7 @@
     border-radius:20px;padding:2px 8px;vertical-align:middle;letter-spacing:.02em}
   /* Collapsible cards — each is a <details>; only what you're working on needs to be open */
   .card{border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:#fff;overflow:hidden}
+  .card[hidden]{display:none}   /* explicit: the Columns card is hidden until files are loaded */
   .card>summary{list-style:none;cursor:pointer;padding:10px 12px;font-size:11.5px;font-weight:700;
     text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:flex;align-items:center;gap:8px;user-select:none}
   .card>summary::-webkit-details-marker{display:none}
@@ -117,7 +118,7 @@
     text-align:left;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   table.data th{background:var(--t-head-bg);color:var(--t-head-ink);font-weight:600;font-size:10.5px;
     text-transform:uppercase;letter-spacing:.055em;border-bottom:1.5px solid var(--t-edge)}
-  table.data tbody tr:last-child td,table.data tr:last-child td{border-bottom:1.5px solid var(--t-edge)}
+  table.data tbody tr:last-child td{border-bottom:1.5px solid var(--t-edge)}   /* tbody-scoped: must never reach a header row */
   table.data.zebra tbody tr:nth-child(even) td{background:var(--t-zebra)}
   table.data tr.elem-top td{border-top:1.5px solid var(--t-edge)}
   table.data th.val,table.data td.val{text-align:left}
@@ -359,7 +360,7 @@
      PATCH  a fix or a tweak, nothing new.
    Bump this in the same commit as the change, and add a line to CHANGELOG.md. Shown in the
    sidebar only — the sidebar is hidden when printing, so it never lands in a customer's PDF. */
-const APP_VERSION='2.2.0';
+const APP_VERSION='2.2.1';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
