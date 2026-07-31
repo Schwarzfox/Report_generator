@@ -1,0 +1,10 @@
+.DS_Store
+.claude/settings.local.json
+*.zip
+kl,j.pdf
+
+# bulk measurement data (kept locally, not in the repo)
+50 repeats/
+empirical/
+re/
+Archive/

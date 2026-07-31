@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FT200 Report Generator</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --panel:#ffffff; --ink:#1c2330; --muted:#5b6472; --line:#dfe4ea;
+    --brand:#1f6feb; --brand-ink:#fff; --res:#0b3d91; --resbg:#eaf2ff; --chip:#eef2f7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  h1,h2,h3,h4{margin:0 0 .4em}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 12px}
+  button.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+  button.primary:hover{filter:brightness(1.07)}
+  button:hover{background:#f0f3f7}
+  input[type=text],textarea,select{width:100%;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:inherit}
+  textarea{resize:vertical;min-height:48px}
+  label.fld{display:block;margin:9px 0 3px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+  .app{display:grid;grid-template-columns:340px 1fr;min-height:100vh}
+  .side{background:#eef1f5;border-right:1px solid #d7dde6;padding:18px;overflow-y:auto;max-height:100vh}
+  .side h1{font-size:17px}
+  .side .sub{color:var(--muted);font-size:12px;margin-bottom:14px}
+  .card{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px;background:#fff}
+  .card h3{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .drop{border:2px dashed #c4ccd6;border-radius:10px;padding:16px;text-align:center;color:var(--muted);background:#fbfcfe}
+  .drop.hot{border-color:var(--brand);background:#eef5ff;color:var(--brand)}
+  .toggle{display:flex;align-items:center;gap:8px;padding:4px 0}
+  .toggle input{width:16px;height:16px}
+  .logo-prev{max-width:100%;max-height:54px;margin-top:8px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:4px}
+  .note{font-size:12px;color:var(--muted)}
+  .skips{font-size:12px;color:#b3541e;margin-top:8px;white-space:pre-line}
+  .colgrp{margin-top:8px}
+  .colsub,.colgrp .gh,.colgrp.gh{font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 3px;padding-bottom:3px;border-bottom:1px solid var(--line)}
+  #colCard .colsub:first-of-type{margin-top:6px}
+  /* preview */
+  .main{padding:22px;overflow-y:auto;max-height:100vh}
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .grpcount{color:var(--muted);font-size:13px}
+  .report-group{background:#fff;border:1px solid var(--line);border-radius:12px;padding:26px;margin:0 auto 22px;max-width:940px;box-shadow:0 1px 3px rgba(20,30,50,.05)}
+  .rg-head{display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:6px}
+  .party{max-width:46%}
+  .party.right{text-align:right}
+  .party img{max-height:68px;max-width:230px;object-fit:contain;display:block;margin-bottom:6px}
+  .party.right img{margin-left:auto}
+  .party .nm{font-weight:700;font-size:14px}
+  .party .addr{font-size:11.5px;color:var(--muted);white-space:pre-line}
+  .rg-title{font-size:20px;font-weight:700;margin:14px 0 2px}
+  .rg-sub{font-size:12.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+  .rg-cal{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-weight:600;color:var(--ink)}
+  table.data{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:13px}
+  body.tw-fit table.data{width:auto}                                   /* Fit content: shrink-wrap */
+  body.tw-balanced table.data{table-layout:fixed}                      /* Balanced: honor colgroup weights */
+  body.tw-balanced table.data th{white-space:normal}                   /* let headers wrap in narrow columns */
+  body.tw-balanced table.data td{overflow:hidden;text-overflow:ellipsis}
+  table.data th,table.data td{border:1px solid #bcc7d3;padding:7px 10px;text-align:left;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  table.data tr.elem-top td{border-top:2px solid #c9d2dd}
+  table.data th.qgrp,table.data td.qgrp{border-left:2px solid #aeb9c7;padding-left:13px}   /* group value+± together, separate from next element */
+  table.data th.val{text-align:right}
+  table.data td.val{text-align:right;font-weight:600}                    /* result numbers: right-aligned so digits line up, emphasised */
+  table.data th.err{text-align:left}
+  table.data td.err{text-align:left;color:#6b7480;padding-left:5px}      /* ± hugs its value, muted (secondary) */
+  table.data th{background:#cbdcef;color:#14315c;font-weight:700}
+  table.data th.txt,table.data td.txt{text-align:left}
+  table.data tr:nth-child(even) td{background:#e5ecf5}
+  table.data td.subhead{background:#eef2f7;font-weight:700;border-top:2px solid #c9d2dd}
+  table.data td.pf-pass{color:#12894f;font-weight:600}
+  table.data td.pf-fail{color:#c0392b;font-weight:600}
+  .sect-h{font-size:14px;font-weight:700;margin:20px 0 6px;border-left:3px solid #d1342f;padding-left:8px}
+  .charts{display:flex;flex-wrap:wrap;gap:18px}
+  .chart-box{flex:1 1 380px;min-width:320px}
+  .chart-box h4{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  .chart-pair{margin-bottom:16px}
+  .cp-title{font-weight:700;font-size:13px;margin:4px 0}
+  svg.chart{width:100%;height:auto;border:1.2px solid #6c7889;border-radius:8px;background:#fff}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;margin-top:6px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
+  .rg-notes{white-space:pre-wrap;font-size:12.5px;border-top:1px solid var(--line);margin-top:16px;padding-top:10px}
+  .rg-cal-foot{font-size:12px;color:var(--muted);margin-top:14px;border-top:1px solid var(--line);padding-top:8px}
+  .selector{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;padding:14px 16px;max-width:940px;margin:0 auto 18px}
+  .sel-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .sel-btn{display:flex;align-items:center;gap:8px}
+  .sel-btn.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .sel-btn .cnt{background:rgba(0,0,0,.08);border-radius:10px;padding:1px 7px;font-size:12px}
+  .sel-btn.active .cnt{background:rgba(255,255,255,.28)}
+  .empty{max-width:900px;margin:60px auto;text-align:center;color:var(--muted)}
+  .empty h2{color:var(--ink)}
+  @media print{
+    @page{margin:12mm}
+    body{background:#fff}
+    .app{display:block}
+    .side,.toolbar,.no-print{display:none!important}
+    .main{padding:0;max-height:none;overflow:visible}
+    .report-group{border:none;box-shadow:none;max-width:none;margin:0;padding:0}
+    .report-group + .report-group{page-break-before:always}
+    body.print-single .report-group{display:none;page-break-before:auto}
+    body.print-single .report-group.print-target{display:block}
+    svg.chart,.chart-box,.chart-pair{page-break-inside:avoid}
+    table.data tr{page-break-inside:avoid}                 /* keep rows whole, but let a long table flow across pages */
+    table.data thead{display:table-header-group}           /* repeat the header row on each printed page */
+    .sect-h,.chart-box h4{page-break-after:avoid;break-after:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <h1>FT200 Report Generator</h1>
+    <div class="sub">Load measurement JSON → grouped by calibration → one PDF per group. Everything is saved for next time.</div>
+
+    <div class="card">
+      <h3>1 · Measurement files</h3>
+      <div class="drop" id="drop">
+        Drop <b>measurement-*.json</b> here<br>or
+        <div style="margin-top:8px"><button id="pickBtn">Choose files</button></div>
+        <input type="file" id="fileInput" accept=".json,application/json" multiple hidden>
+      </div>
+      <div id="loadInfo" class="note" style="margin-top:8px"></div>
+      <div style="margin-top:8px"><button id="clearBtn" class="no-print">Clear loaded data</button></div>
+      <label class="fld" style="margin-top:12px">Table width</label>
+      <select id="t_tablewidth">
+        <option value="full">Full width (stretch to page)</option>
+        <option value="fit">Fit content (shrink to fit)</option>
+        <option value="balanced">Balanced (by importance)</option>
+      </select>
+    </div>
+
+    <div class="card" id="colCard" hidden>
+      <h3>2 · Columns <span class="note">(top→bottom = left→right)</span></h3>
+      <div class="colsub">Reading &amp; sample</div>
+      <div class="toggle"><input type="checkbox" id="c_reading" checked><label for="c_reading">Reading #</label></div>
+      <div class="toggle"><input type="checkbox" id="c_sample" checked><label for="c_sample">Sample name</label></div>
+      <div id="quantCols"></div>
+      <div class="toggle" id="row_mean"><input type="checkbox" id="c_mean" checked><label for="c_mean">Mean (repeats)</label></div>
+      <div class="toggle" id="row_sd"><input type="checkbox" id="c_sd" checked><label for="c_sd">SD (repeats)</label></div>
+      <div class="toggle"><input type="checkbox" id="c_error" checked><label for="c_error">Uncertainty (± values)</label></div>
+      <div class="colsub">Other information</div>
+      <div class="toggle"><input type="checkbox" id="c_passfail" checked><label for="c_passfail">Pass / Fail (control limits)</label></div>
+      <div class="toggle"><input type="checkbox" id="c_coll" checked><label for="c_coll">Collimator</label></div>
+      <div class="toggle" style="margin-top:2px"><input type="checkbox" id="c_date" checked><label for="c_date">Date</label></div>
+      <label class="fld" style="margin-top:2px">Date format</label>
+      <select id="c_datefmt">
+        <option value="iso">2026-06-09</option>
+        <option value="eu">09/06/2026</option>
+        <option value="de">09.06.2026 (DE)</option>
+      </select>
+      <div class="toggle" style="margin-top:8px"><input type="checkbox" id="c_time" checked><label for="c_time">Time</label></div>
+      <label class="fld" style="margin-top:2px">Time format</label>
+      <select id="c_timefmt">
+        <option value="hms">10:12:56</option>
+        <option value="hm">10:12</option>
+      </select>
+      <div id="dataCols"></div>
+    </div>
+
+    <div class="card">
+      <h3>3 · Sections</h3>
+      <div class="toggle" id="row_stats"><input type="checkbox" id="t_stats" checked><label for="t_stats">Statistics table</label></div>
+      <div class="toggle"><input type="checkbox" id="t_statchart"><label for="t_statchart">Statistics chart</label></div>
+      <div class="toggle"><input type="checkbox" id="t_spectrum" checked><label for="t_spectrum">Spectrum chart</label></div>
+    </div>
+
+    <div class="card">
+      <h3>4 · Report</h3>
+      <label class="fld">Report title</label>
+      <input type="text" id="f_title" value="XRF Coating Thickness Report">
+      <label class="fld">Calibration name <span class="note">(override)</span></label>
+      <input type="text" id="f_calname" placeholder="(detected name)">
+      <label class="fld">Operator</label>
+      <input type="text" id="f_operator" placeholder="(from file if blank)">
+      <label class="fld">Notes</label>
+      <textarea id="f_notes" placeholder="Free notes at the bottom of every report"></textarea>
+    </div>
+
+    <div class="card">
+      <h3>5 · Your company <span class="note">(saved here)</span></h3>
+      <div class="toggle"><input type="checkbox" id="t_company" checked><label for="t_company">Show in report</label></div>
+      <button id="companyLogoBtn">Upload logo</button>
+      <button id="companyLogoClear" title="Remove logo">✕</button>
+      <img id="companyLogoPrev" class="logo-prev" hidden>
+      <label class="fld">Company name</label>
+      <input type="text" id="f_coname" placeholder="Your company">
+      <label class="fld">Company address</label>
+      <textarea id="f_coaddr" placeholder="Street, city, country"></textarea>
+    </div>
+
+    <div class="card">
+      <h3>6 · Customer</h3>
+      <div class="toggle"><input type="checkbox" id="t_customer" checked><label for="t_customer">Show in report</label></div>
+      <button id="custLogoBtn">Upload logo</button>
+      <button id="custLogoClear" title="Remove">✕</button>
+      <img id="custLogoPrev" class="logo-prev" hidden>
+      <label class="fld">Customer name</label>
+      <input type="text" id="f_customer" placeholder="Customer">
+      <label class="fld">Customer address</label>
+      <textarea id="f_custaddr" placeholder="Street, city, country"></textarea>
+      <label class="fld">Job / order number</label>
+      <input type="text" id="f_job" placeholder="e.g. PO-12345">
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="toolbar no-print">
+      <button class="primary" id="printAllBtn">🖨 Print report</button>
+      <span class="grpcount" id="grpCount"></span>
+      <span class="note" style="margin-left:auto">Open in Brave/Chrome/Edge · use each group's Print button for one PDF per calibration.</span>
+    </div>
+    <div id="preview">
+      <div class="empty">
+        <h2>No measurements loaded</h2>
+        <p>Choose or drop your <b>measurement-…json</b> files on the left.<br>
+        Heavy <b>lmm-…</b> twins and <b>measurement-none-…</b> averages are ignored automatically.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+"use strict";
+const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
+const sym=z=>SYM[z]||('Z'+z);
+const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
+const SPEC_OVERLAY_MAX=6;
+
+/* ---------- state ---------- */
+let MEAS=[];
+let activeKey=null;   // selected type when multiple are loaded
+let companyLogo=null, customerLogo=null;
+const settings={coname:'',coaddr:'',customer:'',custaddr:'',job:'',title:'',calname:'',operator:'',notes:''};
+const toggles={company:true,customer:true,stats:true,statchart:false,spectrum:true,tablewidth:'full'};   // tablewidth: 'full' | 'fit' | 'balanced'
+const colFlags={reading:true,sample:true,coll:true,date:true,datefmt:'iso',time:true,timefmt:'hms',error:true,passfail:true,mean:true,sd:true};
+const colState={};   // `${groupKey}||${qkey}` -> bool
+const dataCols={};   // dataFieldName -> bool
+
+/* ---------- helpers ---------- */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nl2=s=>esc(s).replace(/\n/g,'<br>');
+function fmt(x,dec){if(x==null||Number.isNaN(x))return '—';return Number(x).toFixed(dec==null?2:dec);}
+function axLabel(v){   // plain decimal axis label, never scientific notation
+  if(v===0)return '0';
+  const a=Math.abs(v);
+  const d=a>=100?0:a>=10?1:a>=1?2:a>=0.1?3:a>=0.01?4:6;
+  let s=v.toFixed(d);
+  if(s.indexOf('.')>=0)s=s.replace(/0+$/,'').replace(/\.$/,'');
+  return s;
+}
+function stats(vals){
+  const v=vals.filter(x=>x!=null&&!Number.isNaN(x)); const n=v.length; if(!n)return null;
+  const mean=v.reduce((a,b)=>a+b,0)/n;
+  const sd=n>1?Math.sqrt(v.reduce((a,b)=>a+(b-mean)**2,0)/(n-1)):0;
+  const rsd=(mean!==0)?sd/mean*100:null;
+  return {n,mean,sd,rsd,min:Math.min(...v),max:Math.max(...v)};
+}
+function fmtDateOnly(ts,f){
+  if(!ts)return '—';
+  const iso=ts.slice(0,10); const [y,m,d]=iso.split('-');
+  if(!(d&&m&&y))return iso;
+  if(f==='eu')return `${d}/${m}/${y}`;
+  if(f==='de')return `${d}.${m}.${y}`;
+  return iso;
+}
+function fmtTime(ts,f){
+  if(!ts)return '—';
+  const t=ts.slice(11,19); return f==='hm'?t.slice(0,5):t;
+}
+
+/* ---------- accept + extract ---------- */
+function accept(d){
+  return d && Array.isArray(d.layers) && d.layers.length>0
+    && d.metadata && d.metadata.measurementType==='single'
+    && d.metadata.analysisResultMetadata && d.metadata.analysisResultMetadata.method
+    && d.metadata.analysisResultMetadata.method.name;
+}
+function extract(d){
+  const md=d.metadata, spec=(md.rawSpectra&&md.rawSpectra[0])||{};
+  const pick=(v,i,def)=>Array.isArray(v)?(v[i]!=null?v[i]:def):(v!=null?v:def);
+  const layers=(d.layers||[]).map(L=>{
+    const els=L.compoundElements||[];
+    const rawUnit=L.compoundMassFractionsUnit, rawDec=L.compoundMassFractionsNumDecimals;
+    return {
+      name: els.map(sym).join('/')||(L.compoundName||'layer'),
+      elements: els.map((z,i)=>({z,sym:sym(z),
+        frac:(L.compoundMassFractionsNumbersInUnits||[])[i],
+        fracDisp:(L.compoundMassFractionsInUnits||[])[i],
+        fracErrDisp:(L.compoundMassFractionsStatisticalErrorsInUnits||[])[i],
+        unit:pick(rawUnit,i,'wt%'),
+        dec:pick(rawDec,i,2)})),
+      fracUnit:pick(rawUnit,0,'wt%'),
+      thickNum:L.thicknessNumberInUnits, thickDisp:L.thicknessInUnits,
+      thickErrDisp:L.thicknessStatisticalErrorInUnits, thickErrNum:L.thicknessStatisticalErrorNumberInUnits,
+      thickUnit:L.thicknessUnit||'', thickDec:(L.thicknessDecimals!=null?L.thicknessDecimals:2),
+      substrate: !((L.thicknessInUnits||'').trim())
+    };
+  });
+  const dfN=d.dataFieldNames||[], dfV=d.dataFieldValues||[];
+  return {
+    ulid:d.ulid||'', sample:d.sampleName||'(unnamed)', seq:d.sequenceNumber||'', lotId:d.lotId||'',
+    programUlid:d.measurementProgramUlid||'',   // non-empty = run via an application
+    dataFields:dfN.map((n,i)=>({name:n,value:dfV[i]!=null?dfV[i]:''})),
+    limits:md.applicationControlLimitsResults||[],
+    operator:d.operatorName||'', timestamp:d.timestamp||'', sampleType:d.sampleType||'',
+    methodUlid:d.methodUlid||'', cal:md.analysisResultMetadata.method.name,
+    coll:spec.collimatorName!=null?String(spec.collimatorName):'',
+    spectrum:{values:spec.values||[],slope:spec.energyCalibrationSlope_eVpc||1,intercept:spec.energyCalibrationIntercept_eV||0,n:spec.numberOfChannels||(spec.values||[]).length,live:spec.liveTime_s||spec.fastLiveTime_s||null},
+    layers
+  };
+}
+
+/* ---------- persistence ---------- */
+function saveState(){   // settings/config only — measurements are NOT persisted (cleared each session)
+  const base={company:{name:settings.coname,addr:settings.coaddr,logo:companyLogo},
+    customer:{name:settings.customer,addr:settings.custaddr,job:settings.job,logo:customerLogo},
+    report:{title:settings.title,operator:settings.operator,notes:settings.notes},
+    toggles,colFlags,colState,dataCols};
+  try{localStorage.setItem('xrf_state',JSON.stringify(base));}catch(e){}
+}
+function loadState(){
+  let s; try{s=JSON.parse(localStorage.getItem('xrf_state'));}catch(e){}
+  if(!s)return;
+  const co=s.company||{}, cu=s.customer||{}, rp=s.report||{};
+  companyLogo=co.logo||null; customerLogo=cu.logo||null;
+  settings.coname=co.name||''; settings.coaddr=co.addr||'';
+  settings.customer=cu.name||''; settings.custaddr=cu.addr||''; settings.job=cu.job||'';
+  settings.title=rp.title||settings.title; settings.operator=rp.operator||''; settings.notes=rp.notes||'';
+  Object.assign(toggles,s.toggles||{}); Object.assign(colFlags,s.colFlags||{});
+  Object.assign(colState,s.colState||{}); Object.assign(dataCols,s.dataCols||{});
+  if(!toggles.tablewidth) toggles.tablewidth=toggles.compact?'fit':'full';   // migrate old compact flag
+  delete toggles.compact;
+}
+
+/* ---------- files ---------- */
+async function loadFiles(fileList){
+  const seen=new Set(MEAS.map(m=>m.ulid).filter(Boolean));
+  let dups=0;
+  for(const f of [...fileList]){
+    let d; try{d=JSON.parse(await f.text());}catch(e){continue;}
+    if(!accept(d))continue;   // silently ignore lmm-, averages, anything else
+    const m=extract(d);
+    if(m.ulid && seen.has(m.ulid)){dups++;continue;}   // duplicate measurement — skip
+    if(m.ulid) seen.add(m.ulid);
+    MEAS.push(m);
+  }
+  $('loadInfo').textContent=`${MEAS.length} measurement(s) loaded${dups?` · ${dups} duplicate(s) skipped`:''}.`;
+  buildQuantCols(); saveState(); render();
+}
+function afterDataChange(){
+  $('loadInfo').textContent=`${MEAS.length} measurement(s) loaded.`;
+  buildQuantCols(); saveState(); render();
+}
+
+/* ---------- grouping + quantities ---------- */
+function groups(){
+  const map=new Map();
+  for(const m of MEAS){const k=(m.methodUlid||m.cal)+'||'+(m.programUlid||'');   // separate by calibration AND application
+    if(!map.has(k))map.set(k,{key:k,cal:m.cal,app:!!m.programUlid,programUlid:m.programUlid||'',methodUlid:m.methodUlid||'',items:[]});
+    map.get(k).items.push(m);}
+  for(const g of map.values())   // oldest first -> reading #1 is the oldest
+    g.items.sort((a,b)=>(a.timestamp<b.timestamp?-1:a.timestamp>b.timestamp?1:0));
+  return [...map.values()];
+}
+// display name: append a short calibration-ID tail ONLY when another loaded group shares the same name
+function groupLabel(g,gs){gs=gs||groups();
+  const clash=gs.filter(x=>x.cal===g.cal).length>1;
+  return g.cal+(clash&&g.methodUlid?` · ${g.methodUlid.slice(-8)}`:'');
+}
+// type marker shown after the name: application vs direct calibration
+function groupKind(g){return g.app?'app':'calib';}
+function groupQuantities(g){
+  const ref=g.items[0], qs=[];
+  ref.layers.forEach((L,i)=>{
+    if(!L.substrate) qs.push({key:`${i}:th`,label:`${L.name} (${L.thickUnit})`,unit:L.thickUnit,dec:L.thickDec,kind:'th',li:i,defOn:true});
+    L.elements.forEach((el,j)=>qs.push({key:`${i}:el${j}`,label:`${el.sym} (${el.unit})`,unit:el.unit,dec:el.dec,kind:'el',li:i,ej:j,
+      defOn:L.elements.length>1}));   // layer measures ≥2 elements (alloy) → composition on, even if one reads 100%; single defined element (pure Au/Sn) → off, thickness only
+  });
+  return qs;
+}
+function colOn(g,q){const k=g.key+'||'+q.key; if(!(k in colState))colState[k]=q.defOn; return colState[k];}
+function activeGroup(gs){gs=gs||groups(); if(!gs.length)return null; if(gs.length===1){activeKey=gs[0].key; return gs[0];} return gs.find(g=>g.key===activeKey)||null;}
+function groupDataFieldNames(g){const names=[],seen=new Set();
+  (g?g.items:[]).forEach(m=>(m.dataFields||[]).forEach(f=>{if(f.name&&!seen.has(f.name)){seen.add(f.name);names.push(f.name);}}));
+  return names;}
+function dataColOn(n){if(!(n in dataCols))dataCols[n]=true; return dataCols[n];}
+function dfVal(m,n){const f=(m.dataFields||[]).find(x=>x.name===n); return f?f.value:'';}
+function controlStatus(m){   // 'pass' | 'fail' | null (no limits evaluated)
+  const L=m.limits||[]; let evaluated=false, fail=false;
+  const isNA=s=>!s||/^n\/?a$/i.test(String(s).trim());
+  const isFail=s=>/too low|too high|out of|above|below|fail|reject/i.test(String(s));
+  L.forEach(e=>{
+    if(!isNA(e.thicknessControlLimitResult)){evaluated=true; if(isFail(e.thicknessControlLimitResult))fail=true;}
+    (e.compositionControlLimitResults||[]).forEach(c=>{if(!isNA(c.massFractionControlLimitResult)){evaluated=true; if(isFail(c.massFractionControlLimitResult))fail=true;}});
+  });
+  return evaluated?(fail?'fail':'pass'):null;
+}
+function groupHasLimits(g){return g.items.some(m=>controlStatus(m)!==null);}
+function qIsNonZero(g,q){return g.items.some(m=>{const v=qVal(m,q); return v.num!=null && v.num>0;});}
+function reportableQuantities(g){return groupQuantities(g).filter(q=>q.kind==='th'||qIsNonZero(g,q));}   // hide all-zero elements
+function isComposition(g){return !groupQuantities(g).some(q=>q.kind==='th');}   // no thickness → bulk composition
+const COMP_TRANSPOSE_MIN=6;   // composition with this many+ reportable elements uses the transposed (elements-as-rows) layout; ≤5 → normal per-measurement rows like coating
+function transposedLayout(g){return isComposition(g) && reportableQuantities(g).length>=COMP_TRANSPOSE_MIN;}
+function qVal(m,q){ // returns {disp,err,num}
+  const L=m.layers[q.li]; if(!L)return {disp:'—',err:null,num:null};
+  if(q.kind==='th')return {disp:L.thickDisp||'—',err:L.thickErrDisp,num:L.thickNum};
+  const el=L.elements[q.ej]; if(!el)return {disp:'—',err:null,num:null};
+  return {disp:el.fracDisp||'—',err:el.fracErrDisp,num:el.frac};
+}
+
+/* ---------- columns config UI ---------- */
+function buildDataCols(g){
+  const names=g?groupDataFieldNames(g):[], host=$('dataCols');
+  if(!names.length){host.innerHTML='';return;}
+  host.innerHTML='<div class="colgrp gh">Data fields</div>'+names.map(n=>
+    `<div class="toggle"><input type="checkbox" data-df="${esc(n)}" ${dataColOn(n)?'checked':''}><label>${esc(n)}</label></div>`).join('');
+  host.querySelectorAll('input').forEach(cb=>cb.onchange=()=>{dataCols[cb.dataset.df]=cb.checked;saveState();render();});
+}
+function buildQuantCols(){
+  $('colCard').hidden=!MEAS.length;
+  const g=activeGroup();
+  buildDataCols(g);
+  const host=$('quantCols'); host.innerHTML='';
+  if(!g)return;
+  const qs=reportableQuantities(g);
+  host.innerHTML='<div class="colgrp gh">Results</div>'+
+    qs.map(q=>{const k=g.key+'||'+q.key;
+      return `<div class="toggle"><input type="checkbox" data-ck="${esc(k)}" ${colOn(g,q)?'checked':''}><label>${esc(q.label)}</label></div>`;}).join('');
+  host.querySelectorAll('input').forEach(cb=>cb.onchange=()=>{colState[cb.dataset.ck]=cb.checked;saveState();render();});
+}
+
+/* ---------- render ---------- */
+function selectorBanner(gs){
+  const el=document.createElement('div'); el.className='selector no-print';
+  el.innerHTML='<b>Multiple measurement types loaded — choose one to report (the rest are ignored):</b>';
+  const row=document.createElement('div'); row.className='sel-row';
+  gs.forEach(g=>{
+    const b=document.createElement('button');
+    b.className='sel-btn'+(g.key===activeKey?' active':'');
+    b.innerHTML=`${esc(groupLabel(g,gs))} · ${groupKind(g)} <span class="cnt">${g.items.length}</span>`;
+    b.onclick=()=>{activeKey=g.key; buildQuantCols(); saveState(); render();};
+    row.appendChild(b);
+  });
+  el.appendChild(row); return el;
+}
+function render(){
+  const gs=groups();
+  const host=$('preview');
+  if(!MEAS.length){$('grpCount').textContent='';host.innerHTML='<div class="empty"><h2>No measurements loaded</h2><p>Choose or drop your <b>measurement-…json</b> files on the left.</p></div>';return;}
+  const ag=activeGroup(gs);
+  $('f_calname').placeholder=ag?groupLabel(ag,gs):'(detected name)';   // show detected (disambiguated) name as the override hint
+  document.body.classList.remove('tw-fit','tw-balanced');
+  if(toggles.tablewidth==='fit') document.body.classList.add('tw-fit');
+  else if(toggles.tablewidth==='balanced') document.body.classList.add('tw-balanced');
+  const inlineMS=!!(ag&&transposedLayout(ag));   // Mean/SD are inline columns only in the transposed composition layout
+  $('row_stats').style.display=inlineMS?'none':'';        // normal layout uses the separate stats table instead
+  $('row_mean').style.display=inlineMS?'':'none';         // hide the dead Mean/SD column toggles in coating layout
+  $('row_sd').style.display=inlineMS?'':'none';
+  $('grpCount').textContent=`${MEAS.length} measurement(s) · ${gs.length} type(s)`;
+  host.innerHTML='';
+  if(gs.length>1) host.appendChild(selectorBanner(gs));
+  if(ag) host.appendChild(renderGroup(ag,0));
+  else{const d=document.createElement('div');d.className='empty';d.innerHTML='<h2>Select a type above</h2><p>Multiple calibrations/applications were loaded. Pick one — the rest are ignored.</p>';host.appendChild(d);}
+}
+function renderGroup(g,gi){
+  const el=document.createElement('section'); el.className='report-group'; el.dataset.gid=gi;
+  const opName=settings.operator||g.items[0].operator||'';
+  const coLogo=companyLogo?`<img src="${companyLogo}" alt="company">`:'';
+  const cuLogo=customerLogo?`<img src="${customerLogo}" alt="customer">`:'';
+  const coBlock=toggles.company?`<div class="party">${coLogo}
+        ${settings.coname?`<div class="nm">${esc(settings.coname)}</div>`:''}
+        ${settings.coaddr?`<div class="addr">${nl2(settings.coaddr)}</div>`:''}
+      </div>`:'<div class="party"></div>';
+  const cuBlock=toggles.customer?`<div class="party right">${cuLogo}
+        ${settings.customer?`<div class="nm">${esc(settings.customer)}</div>`:''}
+        ${settings.custaddr?`<div class="addr">${nl2(settings.custaddr)}</div>`:''}
+        ${settings.job?`<div class="addr">Job: ${esc(settings.job)}</div>`:''}
+      </div>`:'<div class="party right"></div>';
+  const head=(toggles.company||toggles.customer)?`<div class="rg-head">${coBlock}${cuBlock}</div>`:'';
+  const calDisplay=(settings.calname||'').trim()||groupLabel(g);
+  let html=head+`<div class="rg-title">${esc(settings.title||'FT200 Report')}</div>
+    <div class="rg-sub">
+      <span>Operator: ${esc(opName||'—')}</span>
+      <span>${g.items.length} measurement(s)</span>
+    </div>`;
+
+  if(transposedLayout(g)){
+    html+=`<div class="sect-h">Results${g.items.length>1?` (n = ${g.items.length})`:''}</div>`+compositionReport(g);
+  } else {
+    html+=`<div class="sect-h">Results</div>`+resultsTable(g);
+    if(toggles.stats){
+      const rows=statRows(g);
+      if(rows.length) html+=`<div class="sect-h">Statistics${g.items.length>1?` (n = ${g.items.length})`:' (single measurement)'}</div>`+statsTable(rows);
+    }
+  }
+  if(toggles.statchart){const sc=statCharts(g); if(sc) html+=`<div class="sect-h">Statistics charts</div>`+sc;}
+  if(toggles.spectrum) html+=`<div class="sect-h">Spectrum</div><div class="charts"><div class="chart-box">${spectrumChart(g.items)}</div></div>`;
+
+  if(settings.notes) html+=`<div class="rg-notes"><b>Notes:</b> ${nl2(settings.notes)}</div>`;
+  html+=`<div class="rg-cal-foot">${g.app?'Application':'Calibration'}: <span class="rg-cal">${esc(calDisplay)}</span></div>`;
+  html+=`<div class="no-print" style="margin-top:16px"><button class="primary" onclick="printGroup(${gi})">🖨 Print / Save this group as PDF</button></div>`;
+  el.innerHTML=html; return el;
+}
+
+function resultsTable(g){
+  const qs=reportableQuantities(g).filter(q=>colOn(g,q));
+  const dfNames=groupDataFieldNames(g).filter(n=>dataColOn(n));
+  const showPF=colFlags.passfail && groupHasLimits(g);
+  // header — order matches the Columns panel: # · results(±) · Pass/Fail · Collimator · Date · Time · Data fields
+  // w[] collects a relative width weight per column, in the same order — used only by the "Balanced" preset.
+  let h='<tr>'; const w=[];
+  if(colFlags.reading){h+='<th class="txt">#</th>'; w.push(6);}          // narrow, but wide enough for 2-digit row numbers
+  if(colFlags.sample){h+='<th class="txt">Sample</th>'; w.push(13);}
+  // value columns: right-aligned + emphasised; ± hugs its value (left-aligned) and is muted.
+  // qgrp = group-start divider so each value+± reads as one unit, separate from the next element.
+  const valCls=`val${colFlags.error?' qgrp':''}`;
+  qs.forEach(q=>{h+=`<th class="${valCls}">${esc(q.label)}</th>`; w.push(20);   // result — wide
+    if(colFlags.error){h+='<th class="err">±</th>'; w.push(9);}});               // ± — narrow, muted
+  if(showPF){h+='<th>Pass/Fail</th>'; w.push(12);}
+  if(colFlags.coll){h+='<th>Collimator</th>'; w.push(7);}               // narrow
+  if(colFlags.date){h+='<th>Date</th>'; w.push(13);}
+  if(colFlags.time){h+='<th>Time</th>'; w.push(13);}                     // fits 10:12:56
+  dfNames.forEach(n=>{h+=`<th>${esc(n)}</th>`; w.push(12);});
+  h+='</tr>';
+  const tot=w.reduce((a,b)=>a+b,0)||1;
+  const cg=toggles.tablewidth==='balanced'?`<colgroup>${w.map(x=>`<col style="width:${(x/tot*100).toFixed(2)}%">`).join('')}</colgroup>`:'';
+  // rows
+  let body='';
+  g.items.forEach((m,idx)=>{
+    let r='<tr>';
+    if(colFlags.reading) r+=`<td class="txt">${idx+1}</td>`;
+    if(colFlags.sample) r+=`<td class="txt">${esc(m.sample||'—')}</td>`;
+    qs.forEach(q=>{const v=qVal(m,q);
+      r+=`<td class="${valCls}">${esc(v.disp)}</td>`;
+      if(colFlags.error) r+=`<td class="err">${v.err!=null?esc(v.err):'—'}</td>`;});
+    if(showPF){const s=controlStatus(m); r+=`<td class="${s==='fail'?'pf-fail':s==='pass'?'pf-pass':''}">${s?(s==='pass'?'Pass':'Fail'):'—'}</td>`;}
+    if(colFlags.coll) r+=`<td>${esc(m.coll||'—')}${m.coll?' mm':''}</td>`;
+    if(colFlags.date) r+=`<td>${esc(fmtDateOnly(m.timestamp,colFlags.datefmt))}</td>`;
+    if(colFlags.time) r+=`<td>${esc(fmtTime(m.timestamp,colFlags.timefmt))}</td>`;
+    dfNames.forEach(n=>{const val=dfVal(m,n); r+=`<td>${val?esc(val):'—'}</td>`;});
+    r+='</tr>'; body+=r;
+  });
+  return `<table class="data">${cg}<thead>${h}</thead><tbody>${body}</tbody></table>`;
+}
+
+function statRows(g){
+  return reportableQuantities(g).filter(q=>colOn(g,q)).map(q=>({q,stat:stats(g.items.map(m=>qVal(m,q).num))})).filter(r=>r.stat);
+}
+function elementRows(g){
+  const rows=reportableQuantities(g).filter(q=>q.kind==='el'&&colOn(g,q)).map(q=>{
+    const vals=g.items.map(m=>qVal(m,q));
+    return {q,vals,stat:stats(vals.map(v=>v.num))};
+  });
+  rows.sort((a,b)=>((b.stat?b.stat.mean:0)-(a.stat?a.stat.mean:0)));   // major components first
+  return rows;
+}
+// measurements per composition table before wrapping — fewer when ± is shown (wider cells) so it still fits a printed page
+function compColsPerTable(){return colFlags.error?6:8;}
+function compositionReport(g){   // measurements are columns; wrap into stacked tables when there are many
+  const rows=elementRows(g);
+  const N=g.items.length;
+  const per=compColsPerTable();
+  let out='';
+  for(let start=0;start<N;start+=per){
+    const end=Math.min(N,start+per);
+    if(N>per) out+=`<div class="note" style="margin-top:10px">Measurements ${start+1}–${end}</div>`;
+    out+=compTableChunk(g,rows,start,end);
+  }
+  if(!N) out='<p class="note">No measurements.</p>';
+  return out;
+}
+function compTableChunk(g,rows,start,end){   // one table for measurements [start,end)
+  const multi=g.items.length>1;
+  const showMean=multi&&colFlags.mean, showSD=multi&&colFlags.sd;
+  const showPF=colFlags.passfail && groupHasLimits(g);
+  const dfNames=groupDataFieldNames(g).filter(n=>dataColOn(n));
+  const items=g.items.slice(start,end);
+  const totalCols=1+items.length+(showMean?1:0)+(showSD?1:0);
+  const emptyMS=(showMean?'<td></td>':'')+(showSD?'<td></td>':'');
+  // header — measurements as columns
+  let h='<tr><th class="txt"></th>';
+  items.forEach((m,i)=>h+=`<th>#${start+i+1}</th>`);
+  if(showMean) h+='<th>Mean</th>';
+  if(showSD) h+='<th>SD</th>';
+  h+='</tr>';
+  const metaRow=(label,cellFn)=>{let r=`<tr><td class="txt">${esc(label)}</td>`; items.forEach(m=>r+=cellFn(m)); return r+emptyMS+'</tr>';};
+  let body='';
+  if(colFlags.sample) body+=metaRow('Sample',m=>`<td>${esc(m.sample||'—')}</td>`);
+  if(colFlags.date) body+=metaRow('Date',m=>`<td>${esc(fmtDateOnly(m.timestamp,colFlags.datefmt))}</td>`);
+  if(colFlags.time) body+=metaRow('Time',m=>`<td>${esc(fmtTime(m.timestamp,colFlags.timefmt))}</td>`);
+  if(colFlags.coll) body+=metaRow('Collimator',m=>`<td>${esc(m.coll||'—')}${m.coll?' mm':''}</td>`);
+  if(showPF) body+=metaRow('Pass/Fail',m=>{const s=controlStatus(m);return `<td class="${s==='fail'?'pf-fail':s==='pass'?'pf-pass':''}">${s?(s==='pass'?'Pass':'Fail'):'—'}</td>`;});
+  dfNames.forEach(n=>{body+=metaRow(n,m=>{const val=dfVal(m,n);return `<td>${val?esc(val):'—'}</td>`;});});
+  if(rows.length){
+    rows.forEach((r,ri)=>{
+      let tr=`<tr${ri===0?' class="elem-top"':''}><td class="txt">${esc(r.q.label)}</td>`;
+      for(let i=start;i<end;i++){const v=r.vals[i]; const u=(colFlags.error&&v.err!=null)?` ± ${esc(v.err)}`:''; tr+=`<td>${esc(v.disp)}${u}</td>`;}
+      if(showMean) tr+=`<td>${fmt(r.stat.mean,r.q.dec)}</td>`;   // Mean/SD are over ALL measurements
+      if(showSD) tr+=`<td>${fmt(r.stat.sd,r.q.dec)}</td>`;
+      tr+='</tr>'; body+=tr;
+    });
+  } else body+=`<tr><td class="txt" colspan="${totalCols}"><span class="note">No non-zero elements to report.</span></td></tr>`;
+  return `<table class="data">${h}${body}</table>`;
+}
+function statsTable(rows){
+  const body=rows.map(r=>{const s=r.stat,q=r.q;
+    return `<tr><td class="txt">${esc(q.label)}</td><td>${fmt(s.mean,q.dec)}</td><td>${fmt(s.sd,q.dec)}</td>`+
+      `<td>${s.rsd==null?'—':fmt(s.rsd,2)+'%'}</td><td>${fmt(s.min,q.dec)}</td><td>${fmt(s.max,q.dec)}</td><td>${s.n}</td></tr>`;
+  }).join('');
+  return `<table class="data"><tr><th class="txt">Quantity</th><th>Mean</th><th>SD</th><th>RSD</th><th>Min</th><th>Max</th><th>n</th></tr>${body}</table>`;
+}
+
+/* ---------- charts ---------- */
+const STAT_CHART_MIN=3;   // fewer readings than this → SPC panel is degenerate (SD/MR/histogram meaningless), so hide it
+function statCharts(g){   // per selected quantity: run chart + moving-range + distribution (needs repeats)
+  if(g.items.length<STAT_CHART_MIN) return '';
+  const qs=reportableQuantities(g).filter(q=>colOn(g,q));
+  let out='';
+  qs.forEach(q=>{
+    const pts=g.items.map((m,i)=>({x:i+1,v:qVal(m,q).num})).filter(p=>p.v!=null);
+    if(pts.length<STAT_CHART_MIN) return;
+    const s=stats(pts.map(p=>p.v));
+    const lim=quantSpecLimits(g,q);
+    out+=`<div class="chart-pair"><div class="cp-title">${esc(q.label)}</div>${spcChart(pts,s,lim,q)}</div>`;
+  });
+  return out;
+}
+// application spec limits for a quantity (thickness or element), or null → caller falls back to ±3σ
+function quantSpecLimits(g,q){
+  const z=(q.kind==='el')?(((g.items[0].layers[q.li]||{}).elements||[])[q.ej]||{}).z:null;
+  for(const m of g.items){
+    for(const e of (m.limits||[])){
+      if(q.kind==='th' && e.index===q.li){
+        const lo=e.thicknessControlLowerLimit, hi=e.thicknessControlUpperLimit;
+        if(lo!=null&&hi!=null&&lo!==-1&&hi!==-1&&!(lo===0&&hi===0)&&hi>lo) return {lo,hi};
+      }
+      if(q.kind==='el'){
+        for(const c of (e.compositionControlLimitResults||[])){
+          if(c.atomicNumber===z){const lo=c.massFractionControlLowerLimit,hi=c.massFractionControlUpperLimit;
+            if(lo!=null&&hi!=null&&lo!==-1&&hi!==-1&&hi>lo) return {lo,hi};}
+        }
+      }
+    }
+  }
+  return null;
+}
+// SmartLink-style SPC panel: run chart (bars, one per measurement) + moving-range chart + rotated histogram + stats block
+function spcChart(pts,s,lim,q){
+  const W=720,H=300;
+  const RL=54,RT=16,RW=298,RH=112;   // run chart region
+  const MT=184,MH=64;                 // moving-range region (shares run-chart x)
+  const HL=386,HW=100;                // histogram region (shares run-chart y)
+  const dec=q.dec, mean=s.mean, sd=s.sd, hasSpread=sd>0;
+  const ys=pts.map(p=>p.v), n=pts.length, slot=RW/n, bw=Math.min(slot*0.72,16);
+  const cx=i=>RL+(i+0.5)*slot;
+  const ucl=lim?lim.hi:(mean+3*sd), lcl=lim?lim.lo:(mean-3*sd);
+  let vmin=Math.min(...ys,mean-3*sd,ucl,lcl), vmax=Math.max(...ys,mean+3*sd,ucl,lcl);
+  const vpad=((vmax-vmin)||Math.abs(vmax)||1)*0.08; vmin-=vpad; vmax+=vpad;
+  const Y=v=>RT+RH-RH*((v-vmin)/((vmax-vmin)||1));
+  const limColor='#67a86f', limDash=lim?'':'stroke-dasharray="4 3"';   // UCL/LCL lines green; solid = spec, dashed = ±3σ
+  let g='';
+  // ----- run chart (individuals: points + connecting line) -----
+  g+=`<rect x="${RL}" y="${RT}" width="${RW}" height="${RH}" fill="none" stroke="#6c7889" stroke-width="1.2"/>`;
+  for(let k=0;k<=4;k++){const vv=vmin+(vmax-vmin)*k/4,y=Y(vv);
+    g+=`<line x1="${RL}" y1="${y.toFixed(1)}" x2="${RL+RW}" y2="${y.toFixed(1)}" stroke="#c6d0db"/><text x="${RL-4}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#414c5d">${axLabel(vv)}</text>`;}
+  [['UCL',ucl],['LCL',lcl]].forEach(([lab,val])=>{const y=Y(val);
+    g+=`<line x1="${RL}" y1="${y.toFixed(1)}" x2="${RL+RW}" y2="${y.toFixed(1)}" stroke="${limColor}" stroke-width="1" ${limDash}/><text x="${RL+RW+3}" y="${(y+3).toFixed(1)}" font-size="8.5" fill="${limColor}">${lab}</text>`;});
+  {const y=Y(mean);g+=`<line x1="${RL}" y1="${y.toFixed(1)}" x2="${RL+RW}" y2="${y.toFixed(1)}" stroke="#d1342f" stroke-width="1" stroke-dasharray="2 2"/><text x="${(RL+RW+3).toFixed(1)}" y="${(y+3).toFixed(1)}" font-size="8.5" fill="#d1342f">mean</text>`;}   // label outside on the right; value is read off the left axis
+  g+=`<polyline points="${pts.map((p,i)=>`${cx(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ')}" fill="none" stroke="#3380ff" stroke-width="1.6"/>`;
+  pts.forEach((p,i)=>{const x=cx(i),y=Y(p.v);g+=`<rect x="${(x-1.6).toFixed(1)}" y="${(y-1.6).toFixed(1)}" width="3.2" height="3.2" fill="#16388f"/>`;});
+  g+=`<text x="12" y="${RT+RH/2}" text-anchor="middle" font-size="9" fill="#1b2431" transform="rotate(-90 12 ${RT+RH/2})">${esc(q.unit||'value')}</text>`;
+  // ----- moving-range chart (change between consecutive readings) -----
+  const mr=[]; for(let i=1;i<n;i++) mr.push({i,v:Math.abs(pts[i].v-pts[i-1].v)});
+  const mrbar=mr.length?mr.reduce((a,b)=>a+b.v,0)/mr.length:0, mrucl=3.267*mrbar;
+  const mrmax=(Math.max(mrucl,...mr.map(m=>m.v),0)||1)*1.15;
+  const Ymr=c=>MT+MH-MH*(c/mrmax);
+  g+=`<text x="${RL}" y="${MT-5}" font-size="8.5" fill="#1b2431">Change between consecutive readings</text>`;
+  g+=`<rect x="${RL}" y="${MT}" width="${RW}" height="${MH}" fill="none" stroke="#6c7889" stroke-width="1.2"/>`;
+  for(let k=0;k<=2;k++){const cv=mrmax*k/2,y=Ymr(cv);
+    g+=`<line x1="${RL}" y1="${y.toFixed(1)}" x2="${RL+RW}" y2="${y.toFixed(1)}" stroke="#c6d0db"/><text x="${RL-4}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#414c5d">${axLabel(cv)}</text>`;}
+  {const y=Ymr(mrucl);g+=`<line x1="${RL}" y1="${y.toFixed(1)}" x2="${RL+RW}" y2="${y.toFixed(1)}" stroke="${limColor}" stroke-width="1" stroke-dasharray="4 3"/><text x="${RL+RW+3}" y="${(y+3).toFixed(1)}" font-size="8.5" fill="${limColor}">UCL</text>`;}
+  g+=`<polyline points="${mr.map(m=>`${cx(m.i).toFixed(1)},${Ymr(m.v).toFixed(1)}`).join(' ')}" fill="none" stroke="#3380ff" stroke-width="1.6"/>`;
+  mr.forEach(m=>{const x=cx(m.i),y=Ymr(m.v);g+=`<rect x="${(x-1.4).toFixed(1)}" y="${(y-1.4).toFixed(1)}" width="2.8" height="2.8" fill="#16388f"/>`;});
+  const step=Math.max(1,Math.round(n/8));
+  pts.forEach((p,i)=>{if(i%step===0||i===n-1){g+=`<text x="${cx(i).toFixed(1)}" y="${MT+MH+12}" text-anchor="middle" font-size="8.5" fill="#414c5d">${p.x}</text>`;}});
+  g+=`<text x="${RL+RW/2}" y="${MT+MH+24}" text-anchor="middle" font-size="9" fill="#1b2431">Reading #</text>`;
+  // ----- histogram (rotated, aligned to run-chart Y) -----
+  g+=`<rect x="${HL}" y="${RT}" width="${HW}" height="${RH}" fill="none" stroke="#6c7889" stroke-width="1.2"/>`;
+  if(hasSpread){
+    const nb=Math.min(14,Math.max(5,Math.ceil(Math.sqrt(n))));
+    const bins=new Array(nb).fill(0), bwv=(vmax-vmin)/nb;
+    ys.forEach(v=>{let b=Math.floor((v-vmin)/bwv);b=Math.max(0,Math.min(nb-1,b));bins[b]++;});
+    const maxC=Math.max(...bins,1);
+    bins.forEach((c,i)=>{if(!c)return;const yTop=Y(vmin+(i+1)*bwv),yBot=Y(vmin+i*bwv),w=HW*(c/maxC);
+      g+=`<rect x="${HL}" y="${yTop.toFixed(1)}" width="${w.toFixed(1)}" height="${(yBot-yTop).toFixed(1)}" fill="#3380ff" stroke="#111111" stroke-width=".8"/>`;});   // blue bars with BLACK outline
+    let bell='';for(let i=0;i<=60;i++){const v=vmin+(vmax-vmin)*i/60,d=Math.exp(-0.5*((v-mean)/sd)**2);bell+=`${(HL+HW*d).toFixed(1)},${Y(v).toFixed(1)} `;}
+    g+=`<polyline points="${bell}" fill="none" stroke="#16388f" stroke-width="1.1"/>`;
+    for(let k=-4;k<=4;k++){if(!k)continue;const v=mean+k*sd;if(v<vmin||v>vmax)continue;const y=Y(v);
+      g+=`<line x1="${HL}" y1="${y.toFixed(1)}" x2="${HL+HW}" y2="${y.toFixed(1)}" stroke="#9aa4b2" stroke-dasharray="2 2"/><text x="${HL+HW+3}" y="${(y+3).toFixed(1)}" font-size="8" fill="#3a4453" font-weight="600">${k}s</text>`;}
+    // mean (0σ) — the bell's centre, red to match the run-chart mean line they share a Y-axis with
+    {const y=Y(mean);g+=`<line x1="${HL}" y1="${y.toFixed(1)}" x2="${HL+HW}" y2="${y.toFixed(1)}" stroke="#d1342f" stroke-width="1" stroke-dasharray="2 2"/><text x="${HL+HW+3}" y="${(y+3).toFixed(1)}" font-size="8" fill="#d1342f" font-weight="600">mean</text>`;}
+    for(let k=0;k<=2;k++){const hx=HL+HW*k/2;g+=`<text x="${hx.toFixed(1)}" y="${(RT+RH+12).toFixed(1)}" text-anchor="middle" font-size="8" fill="#414c5d">${Math.round(maxC*k/2)}</text>`;}
+    g+=`<text x="${HL+HW/2}" y="${RT+RH+22}" text-anchor="middle" font-size="8.5" fill="#1b2431">count</text>`;
+  } else {
+    g+=`<text x="${HL+HW/2}" y="${RT+RH/2}" text-anchor="middle" font-size="10" fill="#414c5d">no spread</text>`;
+  }
+  // ----- stats block -----
+  const SX=540; let sy=RT+8;
+  const line=(lab,val)=>{const t=`<text x="${SX}" y="${sy}" font-size="9.5" fill="#1b2431">${lab}</text><text x="${W-8}" y="${sy}" text-anchor="end" font-size="9.5" fill="#1c2330" font-weight="600">${val}</text>`;sy+=15.5;return t;};
+  g+=line('Number',s.n);
+  g+=line('Mean',fmt(mean,dec));
+  g+=line('Std Dev',fmt(sd,dec));
+  g+=line('% Dev (RSD)',s.rsd==null?'—':fmt(s.rsd,2)+'%');
+  g+=line('High',fmt(s.max,dec));
+  g+=line('Low',fmt(s.min,dec));
+  g+=line('Range',fmt(s.max-s.min,dec));
+  g+=lim?`<text x="${SX}" y="${sy+5}" font-size="8.5" fill="#12894f">Limits: application spec</text>`
+        :`<text x="${SX}" y="${sy+5}" font-size="8.5" fill="#b06a00">Limits: ±3σ (statistical)</text>`;
+  // redraw all three frames LAST so gridlines/bars never paint over the edges — keeps a uniform border everywhere
+  g+=`<rect x="${RL}" y="${RT}" width="${RW}" height="${RH}" fill="none" stroke="#6c7889" stroke-width="1.2"/>`;
+  g+=`<rect x="${RL}" y="${MT}" width="${RW}" height="${MH}" fill="none" stroke="#6c7889" stroke-width="1.2"/>`;
+  g+=`<rect x="${HL}" y="${RT}" width="${HW}" height="${RH}" fill="none" stroke="#6c7889" stroke-width="1.2"/>`;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}">${g}</svg>`;
+}
+function spectrumChart(items){
+  const W=440,H=240,padL=52,padR=12,padT=12,padB=34,iw=W-padL-padR,ih=H-padT-padB;
+  const many=items.length>SPEC_OVERLAY_MAX;
+  // many readings of one sample look near-identical → show 3 representatives (first, middle, last) instead of clutter
+  const shown=many?[items[0],items[Math.floor((items.length-1)/2)],items[items.length-1]]:items;
+  const cps=m=>{const l=m.spectrum.live||1; return m.spectrum.values.map(v=>v/l);};   // counts -> counts per second
+  let maxY=1,maxX=1;
+  shown.forEach(m=>{const v=cps(m); if(v.length){maxY=Math.max(maxY,...v);maxX=Math.max(maxX,(m.spectrum.values.length*m.spectrum.slope+m.spectrum.intercept)/1000);}});
+  let g='';
+  for(let k=0;k<=4;k++){const y=padT+ih-ih*k/4;
+    g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#c6d0db"/><text x="${padL-5}" y="${y+3}" text-anchor="end" font-size="9" fill="#414c5d">${Math.round(maxY*k/4)}</text>`;}
+  for(let k=0;k<=5;k++){const x=padL+iw*k/5;g+=`<text x="${x}" y="${H-14}" text-anchor="middle" font-size="9" fill="#414c5d">${(maxX*k/5).toFixed(0)}</text>`;}
+  g+=`<text x="${padL+iw/2}" y="${H-2}" text-anchor="middle" font-size="9" fill="#1b2431">Energy (keV)</text>`;
+  g+=`<text x="11" y="${padT+ih/2}" text-anchor="middle" font-size="9" fill="#1b2431" transform="rotate(-90 11 ${padT+ih/2})">Intensity (cps)</text>`;
+  let legend='';
+  shown.forEach((m,idx)=>{const v=cps(m); if(!v.length)return;const col=CHART_COLORS[idx%CHART_COLORS.length];
+    let pts='';const step=Math.max(1,Math.floor(v.length/iw));
+    for(let c=0;c<v.length;c+=step){const keV=(c*m.spectrum.slope+m.spectrum.intercept)/1000;pts+=`${(padL+iw*(keV/maxX)).toFixed(1)},${(padT+ih-ih*(v[c]/maxY)).toFixed(1)} `;}
+    g+=`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1" opacity=".85"/>`;
+    legend+=`<span><i style="background:${col}"></i>${esc(m.sample)}${m.seq?` · #${esc(m.seq)}`:''}</span>`;});
+  const note=many?`<div class="note" style="margin-top:4px">Showing readings #1, #${Math.floor((items.length-1)/2)+1} and #${items.length} (first, middle, last) of ${items.length}.</div>`:'';
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}">${g}</svg><div class="legend">${legend}</div>${note}`;
+}
+
+/* ---------- printing ---------- */
+function printGroup(gi){
+  document.querySelectorAll('.report-group').forEach(el=>el.classList.toggle('print-target',el.dataset.gid==String(gi)));
+  document.body.classList.add('print-single'); window.print();
+}
+window.printGroup=printGroup;
+window.addEventListener('afterprint',()=>{document.body.classList.remove('print-single');document.querySelectorAll('.report-group').forEach(el=>el.classList.remove('print-target'));});
+$('printAllBtn').onclick=()=>{document.body.classList.remove('print-single');window.print();};
+
+/* ---------- logos ---------- */
+function readImg(input,cb){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f);}
+function showLogo(prevId,data){const p=$(prevId);if(data){p.src=data;p.hidden=false;}else p.hidden=true;}
+$('companyLogoBtn').onclick=()=>$('companyLogoInput').click();
+$('custLogoBtn').onclick=()=>$('custLogoInput').click();
+// inputs created below
+['companyLogoInput','custLogoInput'].forEach(id=>{const i=document.createElement('input');i.type='file';i.accept='image/*';i.id=id;i.hidden=true;document.body.appendChild(i);});
+$('companyLogoInput').onchange=()=>readImg($('companyLogoInput'),d=>{companyLogo=d;showLogo('companyLogoPrev',d);saveState();render();});
+$('custLogoInput').onchange=()=>readImg($('custLogoInput'),d=>{customerLogo=d;showLogo('custLogoPrev',d);saveState();render();});
+$('companyLogoClear').onclick=()=>{companyLogo=null;showLogo('companyLogoPrev',null);saveState();render();};
+$('custLogoClear').onclick=()=>{customerLogo=null;showLogo('custLogoPrev',null);saveState();render();};
+
+/* ---------- bind fields + toggles ---------- */
+const FIELD_MAP={f_coname:'coname',f_coaddr:'coaddr',f_customer:'customer',f_custaddr:'custaddr',f_job:'job',f_title:'title',f_calname:'calname',f_operator:'operator',f_notes:'notes'};
+Object.entries(FIELD_MAP).forEach(([id,key])=>{$(id).oninput=()=>{settings[key]=$(id).value;saveState();render();};});
+[['t_company','company'],['t_customer','customer'],['t_stats','stats'],['t_statchart','statchart'],['t_spectrum','spectrum']].forEach(([id,k])=>$(id).onchange=()=>{toggles[k]=$(id).checked;saveState();render();});
+$('t_tablewidth').onchange=()=>{toggles.tablewidth=$('t_tablewidth').value;saveState();render();};
+[['c_reading','reading'],['c_sample','sample'],['c_coll','coll'],['c_date','date'],['c_time','time'],['c_error','error'],['c_passfail','passfail'],['c_mean','mean'],['c_sd','sd']].forEach(([id,k])=>$(id).onchange=()=>{colFlags[k]=$(id).checked;saveState();render();});
+$('c_datefmt').onchange=()=>{colFlags.datefmt=$('c_datefmt').value;saveState();render();};
+$('c_timefmt').onchange=()=>{colFlags.timefmt=$('c_timefmt').value;saveState();render();};
+
+/* ---------- file input + drop ---------- */
+$('pickBtn').onclick=()=>$('fileInput').click();
+$('fileInput').onchange=()=>loadFiles($('fileInput').files);
+$('clearBtn').onclick=()=>{if(confirm('Clear all loaded measurements? (Your company/customer settings stay.)')){MEAS=[];activeKey=null;afterDataChange();}};
+const drop=$('drop');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hot');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();if(ev==='drop'||e.target===drop)drop.classList.remove('hot');}));
+drop.addEventListener('drop',e=>{if(e.dataTransfer.files.length)loadFiles(e.dataTransfer.files);});
+
+/* ---------- init: restore ---------- */
+function applyStateToUI(){
+  Object.entries(FIELD_MAP).forEach(([id,key])=>$(id).value=settings[key]||'');
+  $('t_company').checked=toggles.company;$('t_customer').checked=toggles.customer;
+  $('t_stats').checked=toggles.stats;$('t_statchart').checked=toggles.statchart;$('t_spectrum').checked=toggles.spectrum;
+  $('t_tablewidth').value=toggles.tablewidth;
+  $('c_reading').checked=colFlags.reading;$('c_sample').checked=colFlags.sample;$('c_coll').checked=colFlags.coll;
+  $('c_date').checked=colFlags.date;$('c_datefmt').value=colFlags.datefmt;
+  $('c_time').checked=colFlags.time;$('c_timefmt').value=colFlags.timefmt;$('c_error').checked=colFlags.error;
+  $('c_passfail').checked=colFlags.passfail;$('c_mean').checked=colFlags.mean;$('c_sd').checked=colFlags.sd;
+  showLogo('companyLogoPrev',companyLogo);showLogo('custLogoPrev',customerLogo);
+}
+loadState(); applyStateToUI(); buildQuantCols();
+render();
+</script>
+</body>
+</html>

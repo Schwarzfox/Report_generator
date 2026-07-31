@@ -1,0 +1,126 @@
+========================================================================
+XRF DEVICE JSON FILES — ANALYSIS & FINDINGS (for report generator)
+Analyzed: 2026-07-24   Device: Hitachi FT230 (deviceSn 150086)
+========================================================================
+
+Three real sample files were analyzed:
+  1. measurement-Umicore-a 9-2026-06-09T10-12-57.json   (~46 KB)  <-- USE THIS
+  2. lmm-Umicore-o 12-2026-06-09T10-52-08.json          (~551 KB)
+  3. measurement-none-2026-06-09T10-52-10.json          (~3 KB)
+
+
+------------------------------------------------------------------------
+1. THE THREE FILE TYPES
+------------------------------------------------------------------------
+
+(A) NORMAL SINGLE MEASUREMENT  ->  measurement-<sampleName>-<timestamp>.json
+    - THIS IS THE FILE THE REPORT GENERATOR USES.
+    - Flat JSON: the measurement object is the top-level dict.
+    - metadata.measurementType == "single"
+    - Self-contained: contains calibration name, all results, spectrum,
+      acquisition settings, hardware identity, dates/times.
+    - ~46 KB.
+
+(B) HEAVY "LMM" EXPORT  ->  lmm-<sampleName>-<timestamp>.json
+    - Same measurement, but NESTED under a "measurement" key, PLUS the full
+      "method", "instrument_calibration", "health_check", "dynamic_hardware"
+      blocks (calibration internals + thickness curves).
+    - ~551 KB. The large size is calibration reference data, NOT report data.
+    - We do NOT need this file for the report. It is only useful if we ever
+      want the raw calibration definition (e.g. method.index.quickID "1-00057").
+
+(C) BATCH AVERAGE  ->  measurement-none-<timestamp>.json
+    - Only produced for REPEAT measurements (averaging a group of shots).
+    - metadata.measurementType == "average".
+    - Contains pre-computed per-layer / per-element statistics:
+        average, average_std_in_units, average_min_in_units,
+        average_max_in_units, average_count.
+    - Lists the source shot ULIDs in averagedFromMeasurements[].
+    - HAS NO calibration name and NO spectrum, so it cannot drive a report
+      on its own.
+    - DECISION: we compute our OWN repeat-measurement statistics (mean, SD,
+      RSD%, min, max, count) from the individual normal files, because this
+      file omits RSD and the calibration name. This file is ignored.
+
+
+------------------------------------------------------------------------
+2. FIELD PATHS IN THE NORMAL FILE (what the report reads)
+------------------------------------------------------------------------
+
+DATE / TIME
+  timestamp .......................... "2026-06-09T10:12:56.248+02:00" (date + hour)
+  metadata.rawSpectra[0].measuredOn .. "2026-06-09T10:52:07+0200"
+  metadata.rawSpectra[0].elapsedTime_s ....... 30.0  (measurement time, seconds)
+  metadata.rawSpectra[0].liveTime_s .......... 29.4
+  metadata.rawSpectra[0].fastLiveTime_s ...... 29.9
+
+ACQUISITION / CONDITIONS
+  metadata.rawSpectra[0].collimatorName ...... "0.3"   (collimator/spot size, mm)
+  metadata.rawSpectra[0].filterName .......... "None"
+  metadata.rawSpectra[0].tubeVoltage_kV ...... 50.0
+  metadata.rawSpectra[0].tubeCurrent_uA ...... 1000.0
+  metadata.rawSpectra[0].paramName ........... "50kv"
+  metadata.rawSpectra[0].numberOfChannels .... 2048
+  metadata.rawSpectra[0].validCounts ......... 182351
+
+CALIBRATION  (used for grouping reports)
+  metadata.analysisResultMetadata.method.name .. "Au/Fe"   (human label)
+  methodUlid ................................... "01KT3Q84..."  (exact group key)
+  metadata.instrumentCalibrationDate ........... "2026-05-20T13:55:54"
+  metadata.healthCheckDate ..................... "2026-06-02T09:52:36..."
+
+SAMPLE / JOB
+  sampleName ....... "Umicore-a 9"
+  sequenceNumber ... "9"
+  sampleType ....... "coatings"
+  lotId ............ "n/a"
+  operatorName ..... "Manager (Default)"
+
+RESULTS  (layers[] = coating stack, top layer first, last = substrate/bulk)
+  Per layer:
+    compoundName ................................ e.g. "Au..." / "Fe..."
+    compoundElements ............................ atomic numbers, e.g. [79]=Au, [26]=Fe
+    compoundMassFractionsInUnits + ...Unit ...... e.g. "100.00" "wt%"
+    compoundMassFractionsStatisticalErrorsInUnits  measurement uncertainty (e.g. 5.72)
+    compoundMassFractionsFitErrors .............. fit uncertainty
+    thicknessInUnits + thicknessUnit ............ e.g. "0.01" "um"
+    thicknessStatisticalErrorInUnits ............ thickness uncertainty
+    thicknessFitErrorInUnits .................... thickness fit uncertainty
+    (substrate/bulk layer has empty thickness)
+
+SPECTRUM  (only visual available)
+  metadata.rawSpectra[0].values .... array of 2048 intensity values
+  Energy axis: channel*energyCalibrationSlope_eVpc (25) + energyCalibrationIntercept_eV (0)
+
+DEVICE IDENTITY (optional for report footer)
+  metadata.hwSerialNumbers.deviceSn ...... "150086"
+  metadata.hwSerialNumbers.deviceType .... "FT230"
+
+
+------------------------------------------------------------------------
+3. IMAGES — NONE EXIST
+------------------------------------------------------------------------
+A full recursive scan of every key AND every string value across all three
+files (image, photo, picture, thumbnail, jpg, jpeg, png, bmp, base64,
+data:image, snapshot) returned NOTHING.
+
+The device hardware DOES have cameras (hwSerialNumbers.narrowCameraSn,
+wideCameraSn) and a positioning laser, but no camera image is stored in the
+JSON exports.
+
+=> The only "image" the report can show is a SPECTRUM CHART rendered from
+   rawSpectra[0].values. Any real sample photo would have to be uploaded
+   manually (or come from a separate file the device may save elsewhere —
+   unconfirmed).
+
+
+------------------------------------------------------------------------
+4. GROUPING RULE FOR REPORTS
+------------------------------------------------------------------------
+Group measurements into the same report by EXACT match on calibration:
+  - Group key:  methodUlid  (unambiguous)
+  - Display label: metadata.analysisResultMetadata.method.name ("Au/Fe")
+Measurements spanning multiple calibrations -> one separate PDF per group.
+Repeat statistics (mean, SD, RSD%, min, max, count) computed by us across
+the normal files that share a calibration.
+========================================================================
