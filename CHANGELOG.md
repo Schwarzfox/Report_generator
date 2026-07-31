@@ -14,6 +14,23 @@ Bump the version in the same commit as the change and add a line here.
 
 ---
 
+## 2.1.0
+
+**Spectrum traces are told apart by line style, not just colour.** Overlaid spectra of one sample
+sit almost exactly on top of each other, so colour alone could not separate them. Each trace now
+carries its own colour, dash pattern and opacity — solid blue at 0.70, dashed red at 0.80, dotted
+green at 0.95, and three more for wider overlays. The legend swatch draws the actual line, dashes
+included, instead of a colour chip.
+
+**Instrument header reads as a header.** `Measured with Hitachi FT230 SN 150086` — plain ink,
+underlined, no coloured panel, so it no longer competes with the report title.
+
+**Abbreviation keys drop the obvious units.** `wt%`, `μm`, `mm` and `%` are never glossed anywhere.
+`ppm` and the rarer thickness units still are.
+
+**Version is visible** in the sidebar heading, the toolbar and the browser tab title. All three are
+hidden when printing.
+
 ## 2.0.0
 
 **Instrument header.** Every report now opens with the device that produced it —

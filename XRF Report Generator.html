@@ -69,12 +69,11 @@
   .rg-title{font-size:20px;font-weight:700;margin:14px 0 2px}
   .rg-sub{font-size:12.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
   .rg-cal{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-weight:600;color:var(--ink)}
-  /* permanent instrument band — always printed, sits above the report title */
-  .rg-device{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline;background:var(--resbg);border:1px solid #c3d6f2;border-radius:8px;
-    padding:10px 14px;margin:14px 0 4px;color:#2b3a4f;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .rg-device .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
-  .rg-device .dev{font-size:20px;font-weight:700;color:var(--res);line-height:1.15}
-  .rg-device .sn{font-size:15px;font-weight:600;color:var(--res);font-variant-numeric:tabular-nums}
+  /* permanent instrument line — always printed, reads as a header above the report title:
+     plain ink on the page, no panel and no colour, so it never competes with the title */
+  .rg-device{font-size:17px;font-weight:700;color:var(--ink);letter-spacing:.01em;
+    margin:16px 0 0;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .rg-device .sn{font-variant-numeric:tabular-nums}
   /* abbreviation key — small, right-aligned, closes out the section it belongs to */
   .abbr{font-size:9.5px;line-height:1.5;color:#8b95a3;text-align:right;margin:-12px 0 18px;padding-left:18%}
   .abbr b{font-weight:600;color:#6b7480}
@@ -102,6 +101,7 @@
   .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;margin-top:6px}
   .legend span{display:inline-flex;align-items:center;gap:5px}
   .legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
+  .legend svg.lgl{flex:none;overflow:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .rg-notes{white-space:pre-wrap;font-size:12.5px;border-top:1px solid var(--line);margin-top:16px;padding-top:10px}
   .rg-cal-foot{font-size:12px;color:var(--muted);margin-top:14px;border-top:1px solid var(--line);padding-top:8px}
   .selector{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;padding:14px 16px;max-width:940px;margin:0 auto 18px}
@@ -263,6 +263,7 @@
     <div class="toolbar no-print">
       <button class="primary" id="printAllBtn">🖨 Print report</button>
       <span class="grpcount" id="grpCount"></span>
+      <span class="ver" id="appVerTop"></span>
       <span class="note" style="margin-left:auto">Open in Brave/Chrome/Edge · use each group's Print button for one PDF per calibration.</span>
     </div>
     <div id="preview">
@@ -284,11 +285,23 @@
      PATCH  a fix or a tweak, nothing new.
    Bump this in the same commit as the change, and add a line to CHANGELOG.md. Shown in the
    sidebar only — the sidebar is hidden when printing, so it never lands in a customer's PDF. */
-const APP_VERSION='2.0.0';
+const APP_VERSION='2.1.0';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
 const SPEC_OVERLAY_MAX=6;
+/* Overlaid spectra of the same sample sit almost exactly on top of each other, so colour alone
+   cannot separate them. Each trace gets its own colour AND dash pattern AND opacity: the solid
+   one reads through the dashed one, and the dotted one drawn last leaves gaps to see through. */
+const SPEC_STYLES=[
+  {color:'#1f6feb',dash:'',        alpha:0.70,width:1.2},   // solid blue
+  {color:'#d1342f',dash:'6 3',     alpha:0.80,width:1.3},   // dashed red
+  {color:'#12894f',dash:'1.5 3',   alpha:0.95,width:1.6},   // dotted green
+  {color:'#8a3ffc',dash:'7 2 2 2', alpha:0.80,width:1.2},   // dash-dot purple
+  {color:'#e8590c',dash:'3 3',     alpha:0.80,width:1.2},   // fine dash orange
+  {color:'#0a7d8c',dash:'1 4',     alpha:0.95,width:1.6}    // sparse dot teal
+];
+const specStyle=i=>SPEC_STYLES[i%SPEC_STYLES.length];
 
 /* ---------- state ---------- */
 let MEAS=[];
@@ -510,13 +523,12 @@ function groupDevices(g){
     const k=d.type+'|'+d.sn; if(!seen.has(k))seen.set(k,d);});
   return [...seen.values()];
 }
+const MAKER='Hitachi';   // the FT-series instruments this tool reads are all Hitachi High-Tech
 // Always rendered — the instrument that produced the numbers is not an optional detail.
 function deviceBand(g){
   const ds=groupDevices(g); if(!ds.length)return '';
-  const chips=ds.map(d=>`<span class="dev">${esc(d.type||'Instrument')}</span>${d.sn?`<span class="sn">S/N ${esc(d.sn)}</span>`:''}`)
-    .join('<span class="sn">+</span>');
-  const lead=ds.length>1?'Measured with (multiple instruments)':'Measured with';
-  return `<div class="rg-device"><span class="lbl">${lead}</span>${chips}</div>`;
+  const names=ds.map(d=>`${MAKER} ${esc(d.type||'instrument')}${d.sn?` <span class="sn">SN ${esc(d.sn)}</span>`:''}`).join(' + ');
+  return `<div class="rg-device">Measured with ${names}</div>`;
 }
 
 /* ---------- abbreviation key ---------- */
@@ -539,7 +551,9 @@ function abbrKey(keys){
   (keys||[]).forEach(k=>{if(k&&ABBR[k]&&!seen.has(k)){seen.add(k);out.push(`<b>${esc(k)}</b> = ${esc(ABBR[k])}`);}});
   return out.length?`<div class="abbr">${out.join(' &nbsp;·&nbsp; ')}</div>`:'';
 }
-const unitKeys=qs=>qs.map(q=>q.unit).filter(Boolean);
+// units everyone in the lab already reads without help — never worth a line in the key
+const OBVIOUS_UNITS=new Set(['wt%','μm','µm','mm','%']);
+const unitKeys=qs=>qs.map(q=>q.unit).filter(u=>u&&!OBVIOUS_UNITS.has(u));
 
 /* ---------- columns config UI ---------- */
 function buildDataCols(g){
@@ -877,11 +891,15 @@ function spectrumChart(items){
   g+=`<text x="${padL+iw/2}" y="${H-2}" text-anchor="middle" font-size="9" fill="#1b2431">Energy (keV)</text>`;
   g+=`<text x="11" y="${padT+ih/2}" text-anchor="middle" font-size="9" fill="#1b2431" transform="rotate(-90 11 ${padT+ih/2})">Intensity (cps)</text>`;
   let legend='';
-  shown.forEach((m,idx)=>{const v=cps(m); if(!v.length)return;const col=CHART_COLORS[idx%CHART_COLORS.length];
+  shown.forEach((m,idx)=>{const v=cps(m); if(!v.length)return;const st=specStyle(idx);
+    const dash=st.dash?` stroke-dasharray="${st.dash}" stroke-linecap="round"`:'';
     let pts='';const step=Math.max(1,Math.floor(v.length/iw));
     for(let c=0;c<v.length;c+=step){const keV=(c*m.spectrum.slope+m.spectrum.intercept)/1000;pts+=`${(padL+iw*(keV/maxX)).toFixed(1)},${(padT+ih-ih*(v[c]/maxY)).toFixed(1)} `;}
-    g+=`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1" opacity=".85"/>`;
-    legend+=`<span><i style="background:${col}"></i>${esc(m.sample)}${m.seq?` · #${esc(m.seq)}`:''}</span>`;});
+    g+=`<polyline points="${pts}" fill="none" stroke="${st.color}" stroke-width="${st.width}" opacity="${st.alpha}"${dash}/>`;
+    // the legend swatch is the actual line, dashes and all — a colour chip alone would not identify it
+    legend+=`<span><svg class="lgl" width="22" height="9" viewBox="0 0 22 9" aria-hidden="true">`+
+      `<line x1="0.5" y1="4.5" x2="21.5" y2="4.5" stroke="${st.color}" stroke-width="${Math.max(1.6,st.width)}" opacity="${st.alpha}"${dash}/>`+
+      `</svg>${esc(m.sample)}${m.seq?` · #${esc(m.seq)}`:''}</span>`;});
   const note=many?`<div class="note" style="margin-top:4px">Showing readings #1, #${Math.floor((items.length-1)/2)+1} and #${items.length} (first, middle, last) of ${items.length}.</div>`:'';
   return `<svg class="chart" viewBox="0 0 ${W} ${H}">${g}</svg><div class="legend">${legend}</div>${note}`
     +abbrKey(['cps','keV']);
@@ -1036,7 +1054,9 @@ function applyStateToUI(){
   $('c_passfail').checked=colFlags.passfail;$('c_mean').checked=colFlags.mean;$('c_sd').checked=colFlags.sd;
   showLogo('companyLogoPrev',companyLogo);showLogo('custLogoPrev',customerLogo);
 }
-$('appVer').textContent='v'+APP_VERSION;
+// shown in the sidebar heading and in the toolbar — both are hidden by @media print, so neither reaches a PDF
+['appVer','appVerTop'].forEach(id=>$(id).textContent='v'+APP_VERSION);
+document.title=`XRF Report Generator v${APP_VERSION}`;
 loadState(); applyStateToUI(); buildQuantCols();
 render();
 </script>
