@@ -9,6 +9,16 @@
     --bg:#f4f6f8; --panel:#ffffff; --ink:#1c2330; --muted:#5b6472; --line:#dfe4ea;
     --brand:#1f6feb; --brand-ink:#fff; --res:#0b3d91; --resbg:#eaf2ff; --chip:#eef2f7;
   }
+  /* Table tints. Each theme sets the same four slots, so the structure above never changes —
+     only the colours do. --t-edge is the heavy rule under the header and at the table's foot. */
+  :root,body.tint-plain{                                          /* Plain — fully white */
+    --t-rule:#e2e6eb; --t-edge:#9aa4b2; --t-head-bg:transparent; --t-head-ink:#1c2330; --t-zebra:#f7f8fa}
+  body.tint-blue{                                                 /* Blue — the original palette, calmed */
+    --t-rule:#dbe6f3; --t-edge:#8fb3de; --t-head-bg:#eaf2ff; --t-head-ink:#14315c; --t-zebra:#f4f8fd}
+  body.tint-graphite{                                             /* Graphite — neutral, no hue */
+    --t-rule:#e0e2e6; --t-edge:#9ba1a9; --t-head-bg:#f1f2f4; --t-head-ink:#22262c; --t-zebra:#f7f8f9}
+  body.tint-slate{                                                /* Slate — muted blue-grey, softest */
+    --t-rule:#dde2e9; --t-edge:#94a3b5; --t-head-bg:#eef1f5; --t-head-ink:#2b3a4f; --t-zebra:#f6f8fa}
   *{box-sizing:border-box}
   body{margin:0;font:14px/1.45 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
   h1,h2,h3,h4{margin:0 0 .4em}
@@ -26,8 +36,21 @@
   /* version badge — lives in the sidebar, which is display:none when printing, so it never reaches the PDF */
   .ver{font-size:11px;font-weight:600;color:var(--muted);background:var(--chip);border:1px solid var(--line);
     border-radius:20px;padding:2px 8px;vertical-align:middle;letter-spacing:.02em}
-  .card{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px;background:#fff}
-  .card h3{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  /* Collapsible cards — each is a <details>; only what you're working on needs to be open */
+  .card{border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:#fff;overflow:hidden}
+  .card>summary{list-style:none;cursor:pointer;padding:10px 12px;font-size:11.5px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:flex;align-items:center;gap:8px;user-select:none}
+  .card>summary::-webkit-details-marker{display:none}
+  .card>summary::after{content:'';margin-left:auto;width:6px;height:6px;flex:none;
+    border-right:1.8px solid #9aa4b2;border-bottom:1.8px solid #9aa4b2;transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s}
+  .card[open]>summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
+  .card>summary:hover{background:#f6f8fb;color:var(--ink)}
+  .card[open]>summary{color:var(--ink);border-bottom:1px solid var(--line)}
+  .card>summary .tag{font-weight:600;font-size:10.5px;letter-spacing:0;text-transform:none;color:var(--muted);
+    background:var(--chip);border-radius:20px;padding:1px 7px;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cbody{padding:11px 12px 13px}
+  .cbody>*:first-child{margin-top:0}
+  .cbody label.fld:first-child{margin-top:0}
   .drop{border:2px dashed #c4ccd6;border-radius:10px;padding:16px;text-align:center;color:var(--muted);background:#fbfcfe}
   .drop.hot{border-color:var(--brand);background:#eef5ff;color:var(--brand)}
   .toggle{display:flex;align-items:center;gap:8px;padding:4px 0}
@@ -37,7 +60,15 @@
   .skips{font-size:12px;color:#b3541e;margin-top:8px;white-space:pre-line}
   .colgrp{margin-top:8px}
   .colsub,.colgrp .gh,.colgrp.gh{font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 3px;padding-bottom:3px;border-bottom:1px solid var(--line)}
-  #colCard .colsub:first-of-type{margin-top:6px}
+  #card_cols .colsub:first-of-type{margin-top:6px}
+  /* two controls side by side — stops narrow selects from stretching the full panel width */
+  .frow{display:flex;gap:8px;margin-top:2px}
+  .frow>div{flex:1;min-width:0}
+  .pos{font-weight:500;text-transform:none;letter-spacing:0;color:#a3abb7;font-size:10.5px}
+  .pos::before{content:'→ '}
+  .logo-row{display:flex;align-items:center;gap:7px;margin-top:4px}
+  .logo-row .logo-prev{margin-top:0;max-height:34px;max-width:104px}
+  button.btn-sm{padding:5px 9px;font-size:12.5px}
   /* preview */
   /* overflow-x matters in landscape: the page is wider than the preview column on smaller screens */
   .main{padding:22px;overflow-y:auto;overflow-x:auto;max-height:100vh}
@@ -66,29 +97,35 @@
   .party.right img{margin-left:auto}
   .party .nm{font-weight:700;font-size:14px}
   .party .addr{font-size:11.5px;color:var(--muted);white-space:pre-line}
-  .rg-title{font-size:20px;font-weight:700;margin:14px 0 2px}
-  .rg-sub{font-size:12.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+  .rg-title{font-size:20px;font-weight:700;margin:14px 0 2px;text-align:center}
+  .rg-sub{font-size:12.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;justify-content:center}
   .rg-cal{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-weight:600;color:var(--ink)}
-  /* permanent instrument line — always printed, reads as a header above the report title:
-     plain ink on the page, no panel and no colour, so it never competes with the title */
-  .rg-device{font-size:17px;font-weight:700;color:var(--ink);letter-spacing:.01em;
-    margin:16px 0 0;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  /* Permanent instrument line — always printed. Letterhead treatment: centred and letterspaced,
+     the same size as the title so it reads as a header without outranking what the report IS. */
+  .rg-device{font-size:20px;font-weight:500;color:var(--ink);letter-spacing:.13em;text-transform:uppercase;
+    text-align:center;margin:18px 0 0;padding-bottom:12px;border-bottom:1.5px solid var(--ink)}
   .rg-device .sn{font-variant-numeric:tabular-nums}
   /* abbreviation key — small, right-aligned, closes out the section it belongs to */
   .abbr{font-size:9.5px;line-height:1.5;color:#8b95a3;text-align:right;margin:-12px 0 18px;padding-left:18%}
   .abbr b{font-weight:600;color:#6b7480}
-  table.data{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:13px}
+  /* ---- tables ----
+     One separation mechanism, not three: horizontal rules only (no vertical borders), roomy cells,
+     and zebra striping applied ONLY to tables long enough to lose your place in (see ZEBRA_MIN). */
+  table.data{width:100%;border-collapse:collapse;margin:10px 0 18px;font-size:12.5px}
   body.tw-fit table.data{width:auto}                                   /* Fit content: shrink-wrap */
-  table.data th,table.data td{border:1px solid #bcc7d3;padding:7px 10px;text-align:left;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  table.data tr.elem-top td{border-top:2px solid #c9d2dd}
+  table.data th,table.data td{border:0;border-bottom:1px solid var(--t-rule);padding:8px 12px;
+    text-align:left;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  table.data th{background:var(--t-head-bg);color:var(--t-head-ink);font-weight:600;font-size:10.5px;
+    text-transform:uppercase;letter-spacing:.055em;border-bottom:1.5px solid var(--t-edge)}
+  table.data tbody tr:last-child td,table.data tr:last-child td{border-bottom:1.5px solid var(--t-edge)}
+  table.data.zebra tbody tr:nth-child(even) td{background:var(--t-zebra)}
+  table.data tr.elem-top td{border-top:1.5px solid var(--t-edge)}
   table.data th.val,table.data td.val{text-align:left}
-  table.data td.val{font-weight:600}                                     /* result numbers carry the report — emphasised */
+  table.data td.val{font-weight:600;color:var(--ink)}                    /* result numbers carry the report */
   /* uncertainty lives in the SAME cell as its value — smaller and muted, so it reads as secondary */
-  .pm{font-size:.8em;font-weight:400;color:#7b8593;margin-left:4px;white-space:nowrap}
-  table.data th{background:#cbdcef;color:#14315c;font-weight:700}
+  .pm{font-size:.8em;font-weight:400;color:#8b95a3;margin-left:4px;white-space:nowrap}
   table.data th.txt,table.data td.txt{text-align:left}
-  table.data tr:nth-child(even) td{background:#e5ecf5}
-  table.data td.subhead{background:#eef2f7;font-weight:700;border-top:2px solid #c9d2dd}
+  table.data td.subhead{background:var(--t-head-bg);font-weight:700;border-top:1.5px solid var(--t-edge)}
   table.data td.pf-pass{color:#12894f;font-weight:600}
   table.data td.pf-fail{color:#c0392b;font-weight:600}
   .sect-h{font-size:14px;font-weight:700;margin:20px 0 6px;border-left:3px solid #d1342f;padding-left:8px}
@@ -139,123 +176,160 @@
     <h1>XRF Report Generator <span class="ver" id="appVer"></span></h1>
     <div class="sub">Load measurement JSON → grouped by calibration → one PDF per group. Everything is saved for next time.</div>
 
-    <div class="card">
-      <h3>1 · Measurement files</h3>
-      <div class="drop" id="drop">
-        Drop <b>measurement-*.json</b> here<br>or
-        <div style="margin-top:8px"><button id="pickBtn">Choose files</button></div>
-        <input type="file" id="fileInput" accept=".json,application/json" multiple hidden>
+    <details class="card" id="card_files" open>
+      <summary>1 · Measurement files<span class="tag" id="tag_files"></span></summary>
+      <div class="cbody">
+        <div class="drop" id="drop">
+          Drop <b>measurement-*.json</b> here<br>or
+          <div style="margin-top:8px"><button id="pickBtn">Choose files</button></div>
+          <input type="file" id="fileInput" accept=".json,application/json" multiple hidden>
+        </div>
+        <div id="loadInfo" class="note" style="margin-top:8px"></div>
+        <div style="margin-top:8px"><button id="clearBtn" class="btn-sm no-print">Clear loaded data</button></div>
       </div>
-      <div id="loadInfo" class="note" style="margin-top:8px"></div>
-      <div style="margin-top:8px"><button id="clearBtn" class="no-print">Clear loaded data</button></div>
-      <label class="fld" style="margin-top:12px">Page orientation</label>
-      <div class="orient">
-        <button id="or_portrait" data-or="portrait"><i class="pg p"></i>Portrait</button>
-        <button id="or_landscape" data-or="landscape"><i class="pg l"></i>Landscape</button>
-      </div>
-      <div class="note" style="margin-top:5px">Sets the preview width and the PDF page size. The print dialog can still override it.</div>
-      <label class="fld" style="margin-top:10px">Table width</label>
-      <select id="t_tablewidth">
-        <option value="full">Full width (stretch to page)</option>
-        <option value="fit">Fit content (shrink to fit)</option>
-      </select>
-    </div>
+    </details>
 
-    <div class="card" id="colCard" hidden>
-      <h3>2 · Columns <span class="note">(top→bottom = left→right)</span></h3>
-      <div class="colsub">Reading &amp; sample</div>
-      <div class="toggle"><input type="checkbox" id="c_reading" checked><label for="c_reading">Reading #</label></div>
-      <div class="toggle"><input type="checkbox" id="c_sample" checked><label for="c_sample">Sample name</label></div>
-      <div id="quantCols"></div>
-      <div class="toggle" id="row_mean"><input type="checkbox" id="c_mean" checked><label for="c_mean">Mean (repeats)</label></div>
-      <div class="toggle" id="row_sd"><input type="checkbox" id="c_sd" checked><label for="c_sd">SD (repeats)</label></div>
-      <div class="toggle"><input type="checkbox" id="c_error" checked><label for="c_error">Uncertainty (± , inside the value cell)</label></div>
-      <div class="colsub">Other information</div>
-      <div class="toggle"><input type="checkbox" id="c_passfail" checked><label for="c_passfail">Pass / Fail (control limits)</label></div>
-      <div class="toggle"><input type="checkbox" id="c_coll" checked><label for="c_coll">Collimator</label></div>
-      <div class="toggle" style="margin-top:2px"><input type="checkbox" id="c_date" checked><label for="c_date">Date</label></div>
-      <label class="fld" style="margin-top:2px">Date format</label>
-      <select id="c_datefmt">
-        <option value="iso">2026-06-09</option>
-        <option value="eu">09/06/2026</option>
-        <option value="de">09.06.2026 (DE)</option>
-      </select>
-      <div class="toggle" style="margin-top:8px"><input type="checkbox" id="c_time" checked><label for="c_time">Time</label></div>
-      <label class="fld" style="margin-top:2px">Time format</label>
-      <select id="c_timefmt">
-        <option value="hms">10:12:56</option>
-        <option value="hm">10:12</option>
-      </select>
-      <div id="dataCols"></div>
-    </div>
-
-    <div class="card">
-      <h3>3 · Sections</h3>
-      <div class="toggle" id="row_stats"><input type="checkbox" id="t_stats" checked><label for="t_stats">Statistics table</label></div>
-      <div class="toggle"><input type="checkbox" id="t_statchart"><label for="t_statchart">Statistics chart</label></div>
-      <div class="toggle"><input type="checkbox" id="t_spectrum" checked><label for="t_spectrum">Spectrum chart</label></div>
-      <div class="note" style="margin-top:8px">The instrument header and the abbreviation keys are always printed.</div>
-    </div>
-
-    <div class="card">
-      <h3>4 · Report</h3>
-      <label class="fld">Report title</label>
-      <input type="text" id="f_title" value="XRF Coating Thickness Report">
-      <label class="fld">Calibration name <span class="note">(override)</span></label>
-      <input type="text" id="f_calname" placeholder="(detected name)">
-      <label class="fld">Operator</label>
-      <input type="text" id="f_operator" placeholder="(from file if blank)">
-      <label class="fld">Notes</label>
-      <textarea id="f_notes" placeholder="Free notes at the bottom of every report"></textarea>
-    </div>
-
-    <div class="card">
-      <h3>5 · Your company <span class="note">(saved here)</span></h3>
-      <div class="toggle"><input type="checkbox" id="t_company" checked><label for="t_company">Show in report</label></div>
-      <label class="fld">Saved companies</label>
-      <div class="prof">
-        <select id="p_company_sel"></select>
-        <button id="p_company_ren" title="Rename this profile">✎</button>
-        <button id="p_company_del" title="Delete this profile">🗑</button>
+    <details class="card" id="card_page" open>
+      <summary>2 · Page &amp; table<span class="tag" id="tag_page"></span></summary>
+      <div class="cbody">
+        <label class="fld">Orientation</label>
+        <div class="orient">
+          <button id="or_portrait" data-or="portrait"><i class="pg p"></i>Portrait</button>
+          <button id="or_landscape" data-or="landscape"><i class="pg l"></i>Landscape</button>
+        </div>
+        <div class="note" style="margin-top:5px">Sets the preview width and the PDF page size. The print dialog can still override it.</div>
+        <div class="frow">
+          <div><label class="fld">Table width</label>
+            <select id="t_tablewidth">
+              <option value="full">Full width</option>
+              <option value="fit">Fit content</option>
+            </select></div>
+          <div><label class="fld">Table tint</label>
+            <select id="t_tint">
+              <option value="plain">Plain (white)</option>
+              <option value="blue">Blue</option>
+              <option value="graphite">Graphite</option>
+              <option value="slate">Slate</option>
+            </select></div>
+        </div>
       </div>
-      <div class="profbar">
-        <button id="p_company_save" title="Overwrite the selected profile with the fields below">Update</button>
-        <button id="p_company_new" title="Store the fields below as a new profile">Save as new</button>
-      </div>
-      <div class="note" id="p_company_state"></div>
-      <button id="companyLogoBtn">Upload logo</button>
-      <button id="companyLogoClear" title="Remove logo">✕</button>
-      <img id="companyLogoPrev" class="logo-prev" hidden>
-      <label class="fld">Company name</label>
-      <input type="text" id="f_coname" placeholder="Your company">
-      <label class="fld">Company address</label>
-      <textarea id="f_coaddr" placeholder="Street, city, country"></textarea>
-    </div>
+    </details>
 
-    <div class="card">
-      <h3>6 · Customer</h3>
-      <div class="toggle"><input type="checkbox" id="t_customer" checked><label for="t_customer">Show in report</label></div>
-      <label class="fld">Saved customers</label>
-      <div class="prof">
-        <select id="p_customer_sel"></select>
-        <button id="p_customer_ren" title="Rename this profile">✎</button>
-        <button id="p_customer_del" title="Delete this profile">🗑</button>
+    <details class="card" id="card_cols" hidden>
+      <summary>3 · Columns<span class="tag">top→bottom = left→right</span></summary>
+      <div class="cbody">
+        <div class="colsub">Reading &amp; sample</div>
+        <div class="toggle"><input type="checkbox" id="c_reading" checked><label for="c_reading">Reading #</label></div>
+        <div class="toggle"><input type="checkbox" id="c_sample" checked><label for="c_sample">Sample name</label></div>
+        <div id="quantCols"></div>
+        <div class="toggle" id="row_mean"><input type="checkbox" id="c_mean" checked><label for="c_mean">Mean (repeats)</label></div>
+        <div class="toggle" id="row_sd"><input type="checkbox" id="c_sd" checked><label for="c_sd">SD (repeats)</label></div>
+        <div class="toggle"><input type="checkbox" id="c_error" checked><label for="c_error">Uncertainty (± , inside the value cell)</label></div>
+        <div class="colsub">Other information</div>
+        <div class="toggle"><input type="checkbox" id="c_passfail" checked><label for="c_passfail">Pass / Fail (control limits)</label></div>
+        <div class="toggle"><input type="checkbox" id="c_coll" checked><label for="c_coll">Collimator</label></div>
+        <div class="toggle"><input type="checkbox" id="c_date" checked><label for="c_date">Date</label></div>
+        <div class="toggle"><input type="checkbox" id="c_time" checked><label for="c_time">Time</label></div>
+        <div class="frow">
+          <div><label class="fld">Date format</label>
+            <select id="c_datefmt">
+              <option value="iso">2026-06-09</option>
+              <option value="eu">09/06/2026</option>
+              <option value="de">09.06.2026</option>
+            </select></div>
+          <div><label class="fld">Time format</label>
+            <select id="c_timefmt">
+              <option value="hms">10:12:56</option>
+              <option value="hm">10:12</option>
+            </select></div>
+        </div>
+        <div id="dataCols"></div>
       </div>
-      <div class="profbar">
-        <button id="p_customer_save" title="Overwrite the selected profile with the fields below">Update</button>
-        <button id="p_customer_new" title="Store the fields below as a new profile">Save as new</button>
+    </details>
+
+    <details class="card" id="card_sections" open>
+      <summary>4 · Sections<span class="tag" id="tag_sections"></span></summary>
+      <div class="cbody">
+        <div class="toggle" id="row_stats"><input type="checkbox" id="t_stats" checked><label for="t_stats">Statistics table</label></div>
+        <div class="toggle"><input type="checkbox" id="t_statchart"><label for="t_statchart">Statistics chart</label></div>
+        <div class="toggle"><input type="checkbox" id="t_spectrum" checked><label for="t_spectrum">Spectrum chart</label></div>
+        <div class="toggle" id="row_speclog" style="margin-left:22px"><input type="checkbox" id="t_speclog"><label for="t_speclog">…on a log scale</label></div>
+        <div class="note" style="margin-top:8px">The instrument header and the abbreviation keys are always printed.</div>
       </div>
-      <div class="note" id="p_customer_state"></div>
-      <button id="custLogoBtn">Upload logo</button>
-      <button id="custLogoClear" title="Remove">✕</button>
-      <img id="custLogoPrev" class="logo-prev" hidden>
-      <label class="fld">Customer name</label>
-      <input type="text" id="f_customer" placeholder="Customer">
-      <label class="fld">Customer address</label>
-      <textarea id="f_custaddr" placeholder="Street, city, country"></textarea>
-      <label class="fld">Job / order number</label>
-      <input type="text" id="f_job" placeholder="e.g. PO-12345">
-    </div>
+    </details>
+
+    <!-- fields are listed in the order they appear on the printed page, top to bottom -->
+    <details class="card" id="card_report" open>
+      <summary>5 · Report text<span class="tag" id="tag_report"></span></summary>
+      <div class="cbody">
+        <label class="fld">Report title <span class="pos">top</span></label>
+        <input type="text" id="f_title" value="XRF Coating Thickness Report">
+        <label class="fld">Operator <span class="pos">under the title</span></label>
+        <input type="text" id="f_operator" placeholder="(from file if blank)">
+        <label class="fld">Notes <span class="pos">after the last section</span></label>
+        <textarea id="f_notes" placeholder="Free notes at the bottom of every report"></textarea>
+        <label class="fld">Calibration name <span class="pos">footer</span></label>
+        <input type="text" id="f_calname" placeholder="(detected name)">
+      </div>
+    </details>
+
+    <details class="card" id="card_company">
+      <summary>6 · Your company<span class="tag" id="tag_company"></span></summary>
+      <div class="cbody">
+        <div class="toggle"><input type="checkbox" id="t_company" checked><label for="t_company">Show in report</label></div>
+        <label class="fld">Saved companies</label>
+        <div class="prof">
+          <select id="p_company_sel"></select>
+          <button id="p_company_ren" title="Rename this profile">✎</button>
+          <button id="p_company_del" title="Delete this profile">🗑</button>
+        </div>
+        <div class="profbar">
+          <button id="p_company_save" title="Overwrite the selected profile with the fields below">Update</button>
+          <button id="p_company_new" title="Store the fields below as a new profile">Save as new</button>
+        </div>
+        <div class="note" id="p_company_state"></div>
+        <label class="fld">Company name</label>
+        <input type="text" id="f_coname" placeholder="Your company">
+        <label class="fld">Company address</label>
+        <textarea id="f_coaddr" placeholder="Street, city, country"></textarea>
+        <label class="fld">Logo</label>
+        <div class="logo-row">
+          <button id="companyLogoBtn" class="btn-sm">Upload</button>
+          <button id="companyLogoClear" class="btn-sm" title="Remove logo">✕</button>
+          <img id="companyLogoPrev" class="logo-prev" hidden>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" id="card_customer">
+      <summary>7 · Customer<span class="tag" id="tag_customer"></span></summary>
+      <div class="cbody">
+        <div class="toggle"><input type="checkbox" id="t_customer" checked><label for="t_customer">Show in report</label></div>
+        <label class="fld">Saved customers</label>
+        <div class="prof">
+          <select id="p_customer_sel"></select>
+          <button id="p_customer_ren" title="Rename this profile">✎</button>
+          <button id="p_customer_del" title="Delete this profile">🗑</button>
+        </div>
+        <div class="profbar">
+          <button id="p_customer_save" title="Overwrite the selected profile with the fields below">Update</button>
+          <button id="p_customer_new" title="Store the fields below as a new profile">Save as new</button>
+        </div>
+        <div class="note" id="p_customer_state"></div>
+        <label class="fld">Customer name</label>
+        <input type="text" id="f_customer" placeholder="Customer">
+        <label class="fld">Customer address</label>
+        <textarea id="f_custaddr" placeholder="Street, city, country"></textarea>
+        <label class="fld">Job / order number</label>
+        <input type="text" id="f_job" placeholder="e.g. PO-12345">
+        <label class="fld">Logo</label>
+        <div class="logo-row">
+          <button id="custLogoBtn" class="btn-sm">Upload</button>
+          <button id="custLogoClear" class="btn-sm" title="Remove logo">✕</button>
+          <img id="custLogoPrev" class="logo-prev" hidden>
+        </div>
+      </div>
+    </details>
     <div id="storeWarn" class="warn" hidden></div>
   </aside>
 
@@ -285,11 +359,12 @@
      PATCH  a fix or a tweak, nothing new.
    Bump this in the same commit as the change, and add a line to CHANGELOG.md. Shown in the
    sidebar only — the sidebar is hidden when printing, so it never lands in a customer's PDF. */
-const APP_VERSION='2.1.0';
+const APP_VERSION='2.2.0';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
 const SPEC_OVERLAY_MAX=6;
+const ZEBRA_MIN=8;   // striping only helps once a table is long enough to lose your place in
 /* Overlaid spectra of the same sample sit almost exactly on top of each other, so colour alone
    cannot separate them. Each trace gets its own colour AND dash pattern AND opacity: the solid
    one reads through the dashed one, and the dotted one drawn last leaves gaps to see through. */
@@ -308,9 +383,12 @@ let MEAS=[];
 let activeKey=null;   // selected type when multiple are loaded
 let companyLogo=null, customerLogo=null;
 const settings={coname:'',coaddr:'',customer:'',custaddr:'',job:'',title:'',calname:'',operator:'',notes:''};
-const toggles={company:true,customer:true,stats:true,statchart:false,spectrum:true,
+const toggles={company:true,customer:true,stats:true,statchart:false,spectrum:true,speclog:false,
   tablewidth:'full',        // 'full' | 'fit'
+  tint:'plain',             // 'plain' | 'blue' | 'graphite' | 'slate'
   orientation:'portrait'};  // 'portrait' | 'landscape'
+const TINTS=['plain','blue','graphite','slate'];
+const cardOpen={};   // card id -> bool, so the panel reopens the way you left it
 /* Saved company/customer profiles. The form fields are always the LIVE values; a profile is a
    named snapshot you can recall. Selecting one copies it into the fields (and so into the report). */
 const profiles={company:[],customer:[]};   // company: {id,label,name,addr,logo} · customer: adds {job}
@@ -404,7 +482,7 @@ function saveState(){   // settings/config only — measurements are NOT persist
   const base={company:{name:settings.coname,addr:settings.coaddr,logo:companyLogo},
     customer:{name:settings.customer,addr:settings.custaddr,job:settings.job,logo:customerLogo},
     report:{title:settings.title,operator:settings.operator,notes:settings.notes},
-    profiles,activeProf,toggles,colFlags,colState,dataCols};
+    profiles,activeProf,toggles,cardOpen,colFlags,colState,dataCols};
   try{localStorage.setItem('xrf_state',JSON.stringify(base)); storeWarn('');}
   catch(e){   // almost always the ~5 MB quota, blown by base64 logos — say so instead of failing silently
     storeWarn('⚠ Could not save: browser storage is full. Delete a saved profile or remove a logo, '+
@@ -425,6 +503,8 @@ function loadState(){
   delete toggles.compact;
   if(toggles.tablewidth==='balanced') toggles.tablewidth='full';             // v2 dropped the Balanced preset
   if(toggles.orientation!=='landscape') toggles.orientation='portrait';
+  if(!TINTS.includes(toggles.tint)) toggles.tint='plain';
+  Object.assign(cardOpen,s.cardOpen||{});
   delete toggles.device; delete toggles.abbr;   // both became mandatory in 2.0 — drop the stale saved flags
   // v1 → v2: a single company/customer becomes the first saved profile, so nothing the user typed is lost
   const P=s.profiles||{};
@@ -564,7 +644,7 @@ function buildDataCols(g){
   host.querySelectorAll('input').forEach(cb=>cb.onchange=()=>{dataCols[cb.dataset.df]=cb.checked;saveState();render();});
 }
 function buildQuantCols(){
-  $('colCard').hidden=!MEAS.length;
+  $('card_cols').hidden=!MEAS.length;
   const g=activeGroup();
   buildDataCols(g);
   const host=$('quantCols'); host.innerHTML='';
@@ -591,13 +671,14 @@ function selectorBanner(gs){
   el.appendChild(row); return el;
 }
 function render(){
-  profState('company'); profState('customer');   // fields may have drifted from the selected profile
+  profState('company'); profState('customer'); cardTags();   // fields may have drifted from the selected profile
   const gs=groups();
   const host=$('preview');
   if(!MEAS.length){$('grpCount').textContent='';host.innerHTML='<div class="empty"><h2>No measurements loaded</h2><p>Choose or drop your <b>measurement-…json</b> files on the left.</p></div>';return;}
   const ag=activeGroup(gs);
   $('f_calname').placeholder=ag?groupLabel(ag,gs):'(detected name)';   // show detected (disambiguated) name as the override hint
   document.body.classList.toggle('tw-fit',toggles.tablewidth==='fit');
+  TINTS.forEach(t=>document.body.classList.toggle('tint-'+t,toggles.tint===t));
   applyOrientation();
   const inlineMS=!!(ag&&transposedLayout(ag));   // Mean/SD are inline columns only in the transposed composition layout
   $('row_stats').style.display=inlineMS?'none':'';        // normal layout uses the separate stats table instead
@@ -682,7 +763,7 @@ function resultsTable(g){
     r+='</tr>'; body+=r;
   });
   const keys=(colFlags.error?['±']:[]).concat(unitKeys(qs));
-  return `<table class="data"><thead>${h}</thead><tbody>${body}</tbody></table>`+abbrKey(keys);
+  return `<table class="data${g.items.length>ZEBRA_MIN?' zebra':''}"><thead>${h}</thead><tbody>${body}</tbody></table>`+abbrKey(keys);
 }
 
 function statRows(g){
@@ -753,14 +834,14 @@ function compTableChunk(g,rows,start,end){   // one table for measurements [star
       tr+='</tr>'; body+=tr;
     });
   } else body+=`<tr><td class="txt" colspan="${totalCols}"><span class="note">No non-zero elements to report.</span></td></tr>`;
-  return `<table class="data">${h}${body}</table>`;
+  return `<table class="data${rows.length>ZEBRA_MIN?' zebra':''}">${h}${body}</table>`;
 }
 function statsTable(rows){
   const body=rows.map(r=>{const s=r.stat,q=r.q;
     return `<tr><td class="txt">${esc(q.label)}</td><td>${fmt(s.mean,q.dec)}</td><td>${fmt(s.sd,q.dec)}</td>`+
       `<td>${s.rsd==null?'—':fmt(s.rsd,2)+'%'}</td><td>${fmt(s.min,q.dec)}</td><td>${fmt(s.max,q.dec)}</td><td>${s.n}</td></tr>`;
   }).join('');
-  return `<table class="data"><tr><th class="txt">Quantity</th><th>Mean</th><th>SD</th><th>RSD</th><th>Min</th><th>Max</th><th>n</th></tr>${body}</table>`
+  return `<table class="data${rows.length>ZEBRA_MIN?' zebra':''}"><tr><th class="txt">Quantity</th><th>Mean</th><th>SD</th><th>RSD</th><th>Min</th><th>Max</th><th>n</th></tr>${body}</table>`
     +abbrKey(['Mean','SD','RSD','Min','Max','n'].concat(unitKeys(rows.map(r=>r.q))));
 }
 
@@ -876,25 +957,65 @@ function spcChart(pts,s,lim,q){
   g+=`<rect x="${HL}" y="${RT}" width="${HW}" height="${RH}" fill="none" stroke="#6c7889" stroke-width="1.2"/>`;
   return `<svg class="chart" viewBox="0 0 ${W} ${H}">${g}</svg>`;
 }
+/* Trace energy range: signal stops well before the last channel (a 50 kV tube fills 2048 channels
+   worth 51 keV but dies around 35), and plotting the empty tail wastes a third of the chart. */
+const SPEC_TAIL=0.001;   // last channel worth showing = highest one above 0.1% of that spectrum's peak
+function specMaxKeV(shown){
+  let hi=0;
+  shown.forEach(m=>{
+    const v=m.spectrum.values; if(!v.length)return;
+    let pk=0; for(let c=0;c<v.length;c++) if(v[c]>pk) pk=v[c];
+    const thr=pk*SPEC_TAIL;
+    for(let c=v.length-1;c>=0;c--){if(v[c]>thr){hi=Math.max(hi,(c*m.spectrum.slope+m.spectrum.intercept)/1000);break;}}
+  });
+  return Math.max(5,Math.ceil((hi*1.06)/5)*5);   // round up to a tidy 5 keV tick
+}
+const LOG_DECADES=4;     // how far below the peak a log axis reaches
 function spectrumChart(items){
   const W=440,H=240,padL=52,padR=12,padT=12,padB=34,iw=W-padL-padR,ih=H-padT-padB;
   const many=items.length>SPEC_OVERLAY_MAX;
   // many readings of one sample look near-identical → show 3 representatives (first, middle, last) instead of clutter
   const shown=many?[items[0],items[Math.floor((items.length-1)/2)],items[items.length-1]]:items;
   const cps=m=>{const l=m.spectrum.live||1; return m.spectrum.values.map(v=>v/l);};   // counts -> counts per second
-  let maxY=1,maxX=1;
-  shown.forEach(m=>{const v=cps(m); if(v.length){maxY=Math.max(maxY,...v);maxX=Math.max(maxX,(m.spectrum.values.length*m.spectrum.slope+m.spectrum.intercept)/1000);}});
+  const maxX=specMaxKeV(shown);
+  let maxY=1;
+  shown.forEach(m=>{const v=cps(m); for(let c=0;c<v.length;c++) if(v[c]>maxY) maxY=v[c];});
+  const log=!!toggles.speclog;
+  // On a linear axis a 300× dynamic range flattens every minor element into the baseline;
+  // the log axis spans LOG_DECADES below the peak so trace peaks become visible.
+  const loY=maxY/Math.pow(10,LOG_DECADES);
+  const frac=v=>log?(v<=loY?0:Math.log10(v/loY)/LOG_DECADES):v/maxY;
+  const Y=v=>padT+ih-ih*Math.max(0,Math.min(1,frac(v)));
   let g='';
-  for(let k=0;k<=4;k++){const y=padT+ih-ih*k/4;
-    g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#c6d0db"/><text x="${padL-5}" y="${y+3}" text-anchor="end" font-size="9" fill="#414c5d">${Math.round(maxY*k/4)}</text>`;}
+  const ticks=log?LOG_DECADES:4;
+  for(let k=0;k<=ticks;k++){
+    const y=padT+ih-ih*k/ticks;
+    const val=log?loY*Math.pow(10,k):maxY*k/4;
+    g+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="#c6d0db"/>`+
+       `<text x="${padL-5}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#414c5d">${log?axLabel(val):Math.round(val)}</text>`;}
   for(let k=0;k<=5;k++){const x=padL+iw*k/5;g+=`<text x="${x}" y="${H-14}" text-anchor="middle" font-size="9" fill="#414c5d">${(maxX*k/5).toFixed(0)}</text>`;}
   g+=`<text x="${padL+iw/2}" y="${H-2}" text-anchor="middle" font-size="9" fill="#1b2431">Energy (keV)</text>`;
-  g+=`<text x="11" y="${padT+ih/2}" text-anchor="middle" font-size="9" fill="#1b2431" transform="rotate(-90 11 ${padT+ih/2})">Intensity (cps)</text>`;
+  g+=`<text x="11" y="${padT+ih/2}" text-anchor="middle" font-size="9" fill="#1b2431" transform="rotate(-90 11 ${padT+ih/2})">Intensity (cps${log?', log':''})</text>`;
   let legend='';
+  const NB=Math.round(iw);   // one bucket per horizontal pixel of the viewBox
   shown.forEach((m,idx)=>{const v=cps(m); if(!v.length)return;const st=specStyle(idx);
     const dash=st.dash?` stroke-dasharray="${st.dash}" stroke-linecap="round"`:'';
-    let pts='';const step=Math.max(1,Math.floor(v.length/iw));
-    for(let c=0;c<v.length;c+=step){const keV=(c*m.spectrum.slope+m.spectrum.intercept)/1000;pts+=`${(padL+iw*(keV/maxX)).toFixed(1)},${(padT+ih-ih*(v[c]/maxY)).toFixed(1)} `;}
+    /* Bucket by MAXIMUM, never by sampling. XRF peaks are 3-5 channels wide, so taking every
+       Nth channel misses peak apexes — it under-reported this data's main peak by 13% and made
+       identical repeats draw different shapes depending on where the sampling grid happened to land. */
+    const bins=new Array(NB).fill(-1);
+    for(let c=0;c<v.length;c++){
+      const keV=(c*m.spectrum.slope+m.spectrum.intercept)/1000;
+      if(keV>maxX) break;
+      const b=Math.max(0,Math.min(NB-1,Math.floor(NB*(keV/maxX))));
+      if(v[c]>bins[b]) bins[b]=v[c];
+    }
+    let pts='',last=0;
+    for(let b=0;b<NB;b++){
+      const val=bins[b]<0?last:bins[b];   // empty bucket (more pixels than channels) → hold the previous value
+      last=val;
+      pts+=`${(padL+iw*(b/NB)).toFixed(1)},${Y(val).toFixed(1)} `;
+    }
     g+=`<polyline points="${pts}" fill="none" stroke="${st.color}" stroke-width="${st.width}" opacity="${st.alpha}"${dash}/>`;
     // the legend swatch is the actual line, dashes and all — a colour chip alone would not identify it
     legend+=`<span><svg class="lgl" width="22" height="9" viewBox="0 0 22 9" aria-hidden="true">`+
@@ -952,6 +1073,26 @@ $('companyLogoInput').onchange=()=>readImg($('companyLogoInput'),d=>{companyLogo
 $('custLogoInput').onchange=()=>readImg($('custLogoInput'),d=>{customerLogo=d;showLogo('custLogoPrev',d);saveState();render();});
 $('companyLogoClear').onclick=()=>{companyLogo=null;showLogo('companyLogoPrev',null);saveState();render();};
 $('custLogoClear').onclick=()=>{customerLogo=null;showLogo('custLogoPrev',null);saveState();render();};
+
+/* ---------- collapsible sidebar cards ----------
+   Each card remembers whether it was open. The summary carries a short tag saying what the
+   card currently holds, so a collapsed card still tells you its state at a glance. */
+const CARDS=['card_files','card_page','card_cols','card_sections','card_report','card_company','card_customer'];
+CARDS.forEach(id=>{const d=$(id); if(!d)return;
+  d.addEventListener('toggle',()=>{cardOpen[id]=d.open;saveState();});});
+function applyCardState(){CARDS.forEach(id=>{const d=$(id); if(d&&id in cardOpen) d.open=cardOpen[id];});}
+function cardTags(){
+  const set=(id,txt)=>{const e=$(id); if(e) e.textContent=txt||'';};
+  set('tag_files',MEAS.length?`${MEAS.length} loaded`:'none loaded');
+  set('tag_page',`${toggles.orientation==='landscape'?'landscape':'portrait'} · ${toggles.tint}`);
+  const secs=[toggles.stats&&'stats',toggles.statchart&&'chart',toggles.spectrum&&'spectrum'].filter(Boolean);
+  set('tag_sections',secs.length?secs.join(', '):'results only');
+  set('tag_report',settings.title||'untitled');
+  ['company','customer'].forEach(k=>{
+    const p=profFind(k), nm=(k==='company'?settings.coname:settings.customer);
+    set('tag_'+k,(toggles[k]?'':'hidden · ')+(p?profLabel(k,p):(nm||'not set')));
+  });
+}
 
 /* ---------- company / customer profiles ----------
    The form fields are always the live values used in the report. A profile is a named snapshot:
@@ -1023,8 +1164,9 @@ function profCommit(k){refreshProf(k);syncFields();saveState();render();}
 /* ---------- bind fields + toggles ---------- */
 const FIELD_MAP={f_coname:'coname',f_coaddr:'coaddr',f_customer:'customer',f_custaddr:'custaddr',f_job:'job',f_title:'title',f_calname:'calname',f_operator:'operator',f_notes:'notes'};
 Object.entries(FIELD_MAP).forEach(([id,key])=>{$(id).oninput=()=>{settings[key]=$(id).value;saveState();render();};});
-[['t_company','company'],['t_customer','customer'],['t_stats','stats'],['t_statchart','statchart'],['t_spectrum','spectrum']].forEach(([id,k])=>$(id).onchange=()=>{toggles[k]=$(id).checked;saveState();render();});
+[['t_company','company'],['t_customer','customer'],['t_stats','stats'],['t_statchart','statchart'],['t_spectrum','spectrum'],['t_speclog','speclog']].forEach(([id,k])=>$(id).onchange=()=>{toggles[k]=$(id).checked;saveState();render();});
 $('t_tablewidth').onchange=()=>{toggles.tablewidth=$('t_tablewidth').value;saveState();render();};
+$('t_tint').onchange=()=>{toggles.tint=$('t_tint').value;saveState();render();};
 [['c_reading','reading'],['c_sample','sample'],['c_coll','coll'],['c_date','date'],['c_time','time'],['c_error','error'],['c_passfail','passfail'],['c_mean','mean'],['c_sd','sd']].forEach(([id,k])=>$(id).onchange=()=>{colFlags[k]=$(id).checked;saveState();render();});
 $('c_datefmt').onchange=()=>{colFlags.datefmt=$('c_datefmt').value;saveState();render();};
 $('c_timefmt').onchange=()=>{colFlags.timefmt=$('c_timefmt').value;saveState();render();};
@@ -1047,6 +1189,8 @@ function applyStateToUI(){
   $('t_company').checked=toggles.company;$('t_customer').checked=toggles.customer;
   $('t_stats').checked=toggles.stats;$('t_statchart').checked=toggles.statchart;$('t_spectrum').checked=toggles.spectrum;
   $('t_tablewidth').value=toggles.tablewidth;
+  $('t_tint').value=toggles.tint;
+  $('t_speclog').checked=toggles.speclog;
   refreshProf('company');refreshProf('customer');
   $('c_reading').checked=colFlags.reading;$('c_sample').checked=colFlags.sample;$('c_coll').checked=colFlags.coll;
   $('c_date').checked=colFlags.date;$('c_datefmt').value=colFlags.datefmt;
@@ -1057,7 +1201,7 @@ function applyStateToUI(){
 // shown in the sidebar heading and in the toolbar — both are hidden by @media print, so neither reaches a PDF
 ['appVer','appVerTop'].forEach(id=>$(id).textContent='v'+APP_VERSION);
 document.title=`XRF Report Generator v${APP_VERSION}`;
-loadState(); applyStateToUI(); buildQuantCols();
+loadState(); applyStateToUI(); applyCardState(); buildQuantCols();
 render();
 </script>
 </body>

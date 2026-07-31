@@ -14,6 +14,38 @@ Bump the version in the same commit as the change and add a line here.
 
 ---
 
+## 2.2.0
+
+**Spectrum chart: fixed a real drawing bug.** The trace was built by taking every Nth channel to
+fit 2048 channels into ~376 pixels. XRF peaks are 3–5 channels wide, so the sampling grid missed
+peak apexes: on the reference file the main peak drew at 4379 counts instead of 5054 (13% short),
+273 of 410 plotted points under-reported, and identical repeats drew visibly different shapes
+depending on where the grid landed. Buckets are now aggregated by **maximum**, so peak heights are
+exact and repeats overlay cleanly. Verified: rendered peak now matches the true peak to 0.00%.
+
+**Spectrum: log scale option and a trimmed energy axis.** Counts span ~340× between the main peak
+and a typical channel, so a linear axis flattens every minor element into the baseline — a `log
+scale` checkbox under Spectrum chart spans four decades below the peak. The x-axis now stops at
+the last energy carrying signal (40 keV on the reference file, was 51.2) instead of plotting a
+third of a chart of empty tail.
+
+**Tables redesigned, with four tints.** Vertical borders removed — horizontal rules only, roomier
+cells, small-caps headers. Zebra striping applies only to tables over 8 rows, where it earns its
+keep. Tint picker: Plain (fully white), Blue, Graphite, Slate. Every tint drives the same four
+colour slots, so the structure never changes.
+
+**Instrument header centred**, letterspaced, same size as the report title, which is now centred
+with it. Reads as a letterhead rather than a callout.
+
+**Sidebar rebuilt as collapsible cards.** Seven cards, each collapsing to a header row that carries
+a tag saying what it holds (`landscape · slate`, `3 loaded`, `not set`), so a closed card still
+tells you its state. Open/closed is remembered. Paired controls sit side by side, and logos are a
+thumbnail beside their button instead of a full-width block.
+
+**Report text fields reordered to match the printed page** — title, operator, notes, then
+calibration name, each labelled with where it lands. Previously the calibration override sat
+second in the panel but printed last on the page.
+
 ## 2.1.0
 
 **Spectrum traces are told apart by line style, not just colour.** Overlaid spectra of one sample
