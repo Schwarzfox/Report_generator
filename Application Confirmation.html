@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Application Confirmation</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --panel:#fff; --ink:#1c2330; --muted:#5b6472; --line:#dfe4ea;
+    --brand:#1f6feb; --chip:#eef2f7; --mean:#a3560a;
+    --pass:#0f7b3f; --pass-bg:#e6f5ec; --pass-line:#8fcaa8;
+    --fail:#b3261e; --fail-bg:#fdeceb; --fail-line:#e39a95;
+    --warn:#8a5a00; --warn-bg:#fdf3e0; --warn-line:#e0be7c;
+    --t-rule:#e2e6eb; --t-vrule:#eef0f3; --t-edge:#9aa4b2; --t-head-bg:#f2f5f9; --t-zebra:#f8f9fb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  h1,h2,h3,h4{margin:0 0 .4em}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 12px}
+  button:hover{background:#f0f3f7}
+  button.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+  button.primary:hover{filter:brightness(1.07)}
+  input[type=text],textarea,select{width:100%;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:inherit}
+  textarea{resize:vertical;min-height:52px}
+  label.fld{display:block;margin:9px 0 3px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+
+  .app{display:grid;grid-template-columns:360px 1fr;min-height:100vh}
+  .side{background:#eef1f5;border-right:1px solid #d7dde6;padding:18px;overflow-y:auto;max-height:100vh}
+  .side h1{font-size:17px}
+  .side .sub{color:var(--muted);font-size:12px;margin-bottom:14px}
+  .ver{font-size:11px;font-weight:600;color:var(--muted);background:var(--chip);border:1px solid var(--line);
+    border-radius:20px;padding:2px 8px;vertical-align:middle}
+  .card{border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:#fff;overflow:hidden}
+  .card>summary{list-style:none;cursor:pointer;padding:10px 12px;font-size:11.5px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:flex;align-items:center;gap:8px;user-select:none}
+  .card>summary::-webkit-details-marker{display:none}
+  .card>summary::after{content:'';margin-left:auto;width:6px;height:6px;flex:none;
+    border-right:1.8px solid #9aa4b2;border-bottom:1.8px solid #9aa4b2;transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s}
+  .card[open]>summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
+  .card[open]>summary{color:var(--ink);border-bottom:1px solid var(--line)}
+  .card>summary .tag{font-weight:600;font-size:10.5px;letter-spacing:0;text-transform:none;color:var(--muted);
+    background:var(--chip);border-radius:20px;padding:1px 7px;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card .body{padding:12px}
+  .drop{border:2px dashed #b9c3d0;border-radius:10px;padding:16px;text-align:center;color:var(--muted);background:#fafbfd;cursor:pointer}
+  .drop.over{border-color:var(--brand);background:#eef5ff;color:var(--ink)}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+  .row{display:flex;gap:8px;align-items:center}
+  .row>*{flex:1}
+  .row .grow0{flex:0 0 auto}
+
+  /* per-quantity check rows in the sidebar */
+  .qrow{display:grid;grid-template-columns:18px 1fr 92px;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+  .qrow:first-of-type{border-top:none}
+  .qrow .qlab{font-size:12.5px;line-height:1.25}
+  .qrow .qsub{font-size:11px;color:var(--muted)}
+  .qrow.off .qlab,.qrow.off .qsub{opacity:.5}
+  .qrow input[type=text]{padding:4px 6px;text-align:right}
+  .gsec{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .gsec:first-child{margin-top:0;padding-top:0;border-top:none}
+  .gname{font-weight:700;font-size:12.5px;margin-bottom:2px}
+  .gmeta{font-size:11px;color:var(--muted);margin-bottom:6px}
+  /* the coating stack, so the sidebar reads as layer 1 → layer 2 → substrate */
+  .lay{border-left:2px solid #c9d3e0;padding-left:8px;margin-bottom:7px}
+  .lay .layh{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:2px}
+
+  .main{padding:18px;max-height:100vh;overflow:auto}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 auto 14px;width:210mm;max-width:100%}
+  .toolbar .sp{flex:1}
+  .chk{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer}
+  .chk input{margin:0}
+
+  /* ---- the sheet: a real A4 page, so the preview matches the print ---- */
+  /* Deliberately NOT a flex column: in print the sheet collapses to content height, so any flex
+     spacer would push the sign-off to the page foot on screen and nowhere in the PDF. Plain block
+     flow means the preview and the printed page agree. */
+  .sheet{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12mm;margin:0 auto 22px;
+    width:210mm;min-height:297mm;max-width:100%;box-shadow:0 2px 10px rgba(20,30,50,.10)}
+
+  /* title on the left, company identity on the right */
+  .ac-head{display:flex;align-items:flex-start;gap:14px;border-bottom:2px solid var(--t-edge);padding-bottom:8px;margin-bottom:10px}
+  .ac-head .ttl{flex:1;min-width:0}
+  .ac-head .ttl h2{font-size:17px;letter-spacing:.02em;margin:0}
+  .ac-head .ttl .sub{font-size:11.5px;color:var(--muted)}
+  .ac-head .co{flex:0 0 auto;text-align:right;max-width:70mm}
+  .ac-head .co img.mark{width:44mm;display:block;margin:1mm 0 2px auto}
+  .ac-head .co .name{font-weight:600;font-size:11.5px;margin-top:2px}
+  .ac-head .co .addr{font-size:10.5px;color:var(--muted)}
+
+  .ac-app{font-size:19px;font-weight:700;letter-spacing:.01em;margin:2px 0 1px}
+  .ac-dev{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px}
+  .ac-meta{font-size:11.5px;color:var(--muted);margin-bottom:9px}
+  .ac-meta b{color:var(--ink)}
+
+  .sect-h{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+    margin:12px 0 5px;page-break-after:avoid;break-after:avoid}
+
+  table.data{width:100%;border-collapse:collapse;font-size:11.5px}
+  table.data th,table.data td{padding:3px 6px;text-align:right;border-bottom:1px solid var(--t-rule);
+    border-right:1px solid var(--t-vrule);white-space:nowrap}
+  table.data th:first-child,table.data td:first-child{text-align:left}
+  table.data th:last-child,table.data td:last-child{border-right:none}
+  table.data thead th{background:var(--t-head-bg);border-bottom:1.5px solid var(--t-edge);font-weight:700;
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink)}
+  table.data tbody tr:nth-child(even){background:var(--t-zebra)}
+  table.data tfoot td{border-top:1.5px solid var(--t-edge);border-bottom:none;font-weight:600;background:#fff}
+
+  .vt{font-weight:700;font-size:11px;letter-spacing:.04em;padding:1px 8px;border-radius:20px;display:inline-block}
+  .vt.pass{color:var(--pass);background:var(--pass-bg);border:1px solid var(--pass-line)}
+  .vt.fail{color:var(--fail);background:var(--fail-bg);border:1px solid var(--fail-line)}
+  .vt.na{color:var(--muted);background:var(--chip);border:1px solid var(--line)}
+
+  .note{margin:8px 0;border-radius:7px;padding:7px 11px;font-size:11.5px;line-height:1.4;
+    background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn)}
+
+  .crit{font-size:10.5px;color:var(--muted);line-height:1.5;margin-top:5px}
+  .crit b{color:var(--ink)}
+
+  .signoff{margin-top:10px;border-top:1.5px solid var(--t-edge);padding-top:7px;page-break-inside:avoid}
+  .signoff .rem{font-size:11.5px;white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:4px}
+  /* sign-off sits on the right, under the company block it belongs to */
+  .sigwrap{display:flex;justify-content:flex-end}
+  .sigrow{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:96mm;margin-top:4mm;font-size:10.5px;color:var(--muted)}
+  .sigrow .line{border-top:1px solid var(--ink);padding-top:3px}
+  .sigrow .val{font-size:12px;color:var(--ink);font-weight:600;min-height:1.2em;margin-bottom:2px}
+  .sigrow .sig{grid-column:1 / -1;margin-top:6mm}
+
+  svg.chart{display:block;width:100%;height:auto;page-break-inside:avoid}
+  .chart-box{margin-top:8px;page-break-inside:avoid}
+  .chart-box h4{font-size:10.5px;font-weight:700;letter-spacing:.02em;color:var(--muted);margin:0 0 2px}
+  /* Element symbols and units are case-significant: uppercasing gives "SN" and turns μm into "MM". */
+  table.data thead th.u{text-transform:none;letter-spacing:0;font-size:11px}
+
+  .empty{max-width:820px;margin:60px auto;text-align:center;color:var(--muted)}
+  .empty h2{color:var(--ink)}
+
+  @media print{
+    body{background:#fff}
+    .app{display:block}
+    .side,.toolbar,.no-print{display:none!important}
+    .main{padding:0;max-height:none;overflow:visible}
+    .sheet{border:none;box-shadow:none;width:auto;max-width:none;min-height:0;margin:0;padding:0}
+    .sheet + .sheet{page-break-before:always}
+    body.print-single .sheet{display:none;page-break-before:auto}
+    body.print-single .sheet.print-target{display:block}
+    table.data tr{page-break-inside:avoid}
+    table.data thead{display:table-header-group}
+  }
+</style>
+<style id="pageStyle">@page{size:A4 portrait;margin:12mm}</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <h1>Application Confirmation <span class="ver" id="appVer"></span></h1>
+    <div class="sub">Verify a calibration against a certified reference.</div>
+
+    <details class="card" id="cardFiles" open>
+      <summary>Measurements <span class="tag" id="tagFiles">none</span></summary>
+      <div class="body">
+        <div class="drop" id="drop">Drop <b>measurement-*.json</b> files here<br>or click to choose</div>
+        <input type="file" id="file" accept=".json,application/json" multiple hidden>
+        <div class="hint" id="loadInfo">No measurements loaded.</div>
+        <div class="row" style="margin-top:9px">
+          <button id="clearBtn" type="button">Clear all</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" id="cardChecks" hidden open>
+      <summary>Certified values <span class="tag" id="tagChecks"></span></summary>
+      <div class="body" id="checksBody"></div>
+    </details>
+
+    <details class="card" id="cardSign">
+      <summary>Sign-off</summary>
+      <div class="body">
+        <label class="fld">Engineer</label>
+        <input type="text" id="engineer" placeholder="Name of the responsible engineer">
+        <label class="fld">Date</label>
+        <input type="text" id="signdate" placeholder="dd.mm.yyyy">
+        <div class="hint">Pre-filled with today — overwrite it if the confirmation is dated differently.</div>
+      </div>
+    </details>
+
+    <details class="card" id="cardOpt" hidden>
+      <summary>Options &amp; remarks</summary>
+      <div class="body">
+        <label class="chk"><input type="checkbox" id="showCharts"> Show run charts on the sheet</label>
+        <div class="hint">At most <span id="maxUseTxt"></span> measurements are evaluated and listed — more adds nothing to the confirmation.</div>
+        <div id="remBody"></div>
+      </div>
+    </details>
+
+  </aside>
+
+  <main class="main">
+    <div class="toolbar">
+      <span class="sp"></span>
+      <button type="button" id="printBtn" class="primary">Print / Save PDF</button>
+    </div>
+    <div id="out"></div>
+  </main>
+</div>
+
+<script>
+"use strict";
+const VERSION='1.0.0';
+const $=id=>document.getElementById(id);
+
+/* ---------- constants ---------- */
+const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
+const sym=z=>SYM[z]||('Z'+z);
+const MAKER='HITACHI', MODEL_SUFFIX='Coating Analyzer';
+// Fixed issuer of the confirmation — never varies, so it is not a setting.
+const CO_LOGO='data:image/png;base64,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';
+const CO_NAME='Hitachi High-Tech Analytical Science', CO_ADDR='Wellesweg 31, 47589 Uedem';
+const MIN_N=5;                       // fewer than this → warn, verdict still given
+const MAX_USE=10;                    // a confirmation needs 5–10 readings; extra repeats are evaluated but not needed
+const TOL_TH=[5,10,15,20];           // by coating depth: 1st layer 5 %, 2nd 10 %, 3rd 15 %, 4th and deeper 20 %
+const TOL_COMP=10;                   // chemical composition, all layers
+
+/* ---------- state ---------- */
+let MEAS=[];                         // extracted measurements
+const checkOn={};                    // groupKey||qKey -> bool   (user override of the auto-detect)
+const certVal={};                    // groupKey||qKey -> string (typed certified value)
+const remarks={};                    // groupKey       -> string
+const settings={engineer:'',signdate:''};
+let showCharts=false;
+
+/* ---------- helpers ---------- */
+function fmt(x,dec){if(x==null||Number.isNaN(x))return '—';return Number(x).toFixed(dec==null?2:dec);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function stats(vals){
+  const v=vals.filter(x=>x!=null&&!Number.isNaN(x)); const n=v.length; if(!n)return null;
+  const mean=v.reduce((a,b)=>a+b,0)/n;
+  const sd=n>1?Math.sqrt(v.reduce((a,b)=>a+(b-mean)**2,0)/(n-1)):null;   // null at n=1 — not computable, and "0.00" would read as perfect repeatability
+  return {n,mean,sd,rsd:(sd!=null&&mean!==0)?sd/mean*100:null,min:Math.min(...v),max:Math.max(...v)};
+}
+function fmtDate(ts){
+  if(!ts)return '—';
+  const [y,m,d]=ts.slice(0,10).split('-');
+  return (d&&m&&y)?`${d}.${m}.${y}`:ts.slice(0,10);
+}
+function todayDE(){const d=new Date();const p=n=>String(n).padStart(2,'0');return `${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()}`;}
+function num(s){const v=parseFloat(String(s==null?'':s).replace(',','.'));return Number.isFinite(v)?v:null;}
+
+/* ---------- accept + extract (same JSON contract as the report generator) ---------- */
+function accept(d){
+  return d && Array.isArray(d.layers) && d.layers.length>0
+    && d.metadata && d.metadata.measurementType==='single'
+    && d.metadata.analysisResultMetadata && d.metadata.analysisResultMetadata.method
+    && d.metadata.analysisResultMetadata.method.name;
+}
+function extract(d){
+  const md=d.metadata;
+  const pick=(v,i,def)=>Array.isArray(v)?(v[i]!=null?v[i]:def):(v!=null?v:def);
+  const layers=(d.layers||[]).map(L=>{
+    const els=L.compoundElements||[];
+    const rawUnit=L.compoundMassFractionsUnit, rawDec=L.compoundMassFractionsNumDecimals;
+    const full=els.map(sym).join('/')||(L.compoundName||'layer');
+    return {
+      name: full,
+      // a wide-open alloy calibration can define 30+ elements; the full list is useless as a label
+      short: els.length>3?els.slice(0,2).map(sym).join('/')+'…':full,
+      elements: els.map((z,i)=>({z,sym:sym(z),
+        frac:(L.compoundMassFractionsNumbersInUnits||[])[i],
+        unit:pick(rawUnit,i,'wt%'), dec:pick(rawDec,i,2)})),
+      thickNum:L.thicknessNumberInUnits,
+      thickUnit:L.thicknessUnit||'', thickDec:(L.thicknessDecimals!=null?L.thicknessDecimals:2),
+      substrate: !((L.thicknessInUnits||'').trim())      // no thickness = base material, not measured
+    };
+  });
+  const dfN=d.dataFieldNames||[], dfV=d.dataFieldValues||[];
+  const hw=md.hwSerialNumbers||{};
+  return {
+    ulid:d.ulid||'', sample:d.sampleName||'(unnamed)',
+    device:{type:hw.deviceType||'',sn:hw.deviceSn||''},
+    programUlid:d.measurementProgramUlid||'',
+    dataFields:dfN.map((n,i)=>({name:n,value:dfV[i]!=null?dfV[i]:''})),
+    operator:d.operatorName||'', timestamp:d.timestamp||'',
+    methodUlid:d.methodUlid||'', cal:md.analysisResultMetadata.method.name,
+    calDate:md.instrumentCalibrationDate||'', hcDate:md.healthCheckDate||'',
+    layers
+  };
+}
+
+/* ---------- grouping ---------- */
+function groups(){
+  const map=new Map();
+  for(const m of MEAS){
+    const k=(m.methodUlid||m.cal)+'||'+(m.programUlid||'');
+    if(!map.has(k))map.set(k,{key:k,cal:m.cal,app:!!m.programUlid,methodUlid:m.methodUlid||'',items:[]});
+    map.get(k).items.push(m);
+  }
+  for(const g of map.values())
+    g.items.sort((a,b)=>(a.timestamp<b.timestamp?-1:a.timestamp>b.timestamp?1:0));   // oldest first → reading #1 is the oldest
+  return [...map.values()];
+}
+function groupLabel(g,gs){
+  const clash=(gs||groups()).filter(x=>x.cal===g.cal).length>1;
+  return g.cal+(clash&&g.methodUlid?` · ${g.methodUlid.slice(-8)}`:'');
+}
+
+/* ---------- quantities + auto-detect ----------
+   A layer with no thickness is the substrate: base material, nothing measured on it.
+   A coating layer's thickness is always checked. Its composition is only checked when the
+   layer really has a composition to measure — a pure Au or Sn layer reads 100 % by definition. */
+function quantities(g){
+  const ref=g.items[0], qs=[]; let depth=0;
+  ref.layers.forEach((L,i)=>{
+    if(L.substrate){
+      L.elements.forEach((el,j)=>qs.push({key:`${i}:el${j}`,label:`${el.sym} in ${L.short}`,unit:el.unit,dec:el.dec,
+        kind:'el',li:i,ej:j,tol:TOL_COMP,defOn:false,why:'substrate — not measured'}));
+      return;
+    }
+    depth++;
+    const tol=TOL_TH[Math.min(depth,TOL_TH.length)-1];
+    qs.push({key:`${i}:th`,label:`${L.name} thickness`,unit:L.thickUnit,dec:L.thickDec,
+      kind:'th',li:i,depth,tol,defOn:true,why:`layer ${depth}`});
+    const pure=L.elements.length<2;
+    L.elements.forEach((el,j)=>qs.push({key:`${i}:el${j}`,label:pure?`${el.sym} content`:`${el.sym} in ${L.short}`,unit:el.unit,dec:el.dec,
+      kind:'el',li:i,ej:j,depth,tol:TOL_COMP,defOn:!pure,
+      why:pure?'pure element — 100 % by definition':`composition, layer ${depth}`}));
+  });
+  return qs;
+}
+// A confirmation is built on 5–10 readings. Extra repeats are kept in the file list but not evaluated.
+function used(g){return g.items.slice(0,MAX_USE);}
+function isOn(g,q){const k=g.key+'||'+q.key; if(!(k in checkOn))checkOn[k]=q.defOn; return checkOn[k];}
+function certOf(g,q){return certVal[g.key+'||'+q.key]||'';}
+function qVal(m,q){
+  const L=m.layers[q.li]; if(!L)return null;
+  if(q.kind==='th')return L.thickNum!=null?L.thickNum:null;
+  const el=L.elements[q.ej]; return el&&el.frac!=null?el.frac:null;
+}
+
+/* ---------- the verdict ----------
+   Accuracy is judged on the mean only. SD / RSD are reported, not judged. */
+function evaluate(g,q){
+  const s=stats(used(g).map(m=>qVal(m,q)));
+  const c=num(certOf(g,q));
+  if(!s)return {s:null,c,dev:null,verdict:'na'};
+  if(c==null||c===0)return {s,c:null,dev:null,verdict:'na'};
+  const dev=(s.mean-c)/c*100;
+  return {s,c,dev,verdict:Math.abs(dev)<=q.tol?'pass':'fail'};
+}
+function groupVerdict(g){
+  const rows=quantities(g).filter(q=>isOn(g,q)).map(q=>({q,e:evaluate(g,q)}));
+  const n=used(g).length;
+  if(!rows.length)      return {state:'na',rows,n,why:'No quantity selected for this application.'};
+  if(rows.some(r=>r.e.verdict==='na')) return {state:'na',rows,n,why:'Enter a certified value for every selected quantity.'};
+  return {state:rows.every(r=>r.e.verdict==='pass')?'pass':'fail',rows,n,why:''};
+}
+
+/* ---------- loading ---------- */
+async function loadFiles(fileList){
+  const seen=new Set(MEAS.map(m=>m.ulid).filter(Boolean));
+  let dups=0, skipped=0;
+  for(const f of [...fileList]){
+    let d; try{d=JSON.parse(await f.text());}catch(e){skipped++;continue;}
+    if(!accept(d)){skipped++;continue;}                 // lmm-, averages and anything else are ignored
+    const m=extract(d);
+    if(m.ulid&&seen.has(m.ulid)){dups++;continue;}
+    if(m.ulid)seen.add(m.ulid);
+    MEAS.push(m);
+  }
+  $('loadInfo').textContent=MEAS.length
+    ? `${MEAS.length} measurement(s) loaded${dups?` · ${dups} duplicate(s) skipped`:''}${skipped?` · ${skipped} file(s) ignored`:''}.`
+    : 'No usable measurements found. Use the single measurement-*.json files.';
+  render();
+}
+
+/* ---------- sidebar ---------- */
+function renderSidebar(gs){
+  $('cardChecks').hidden=!gs.length;
+  $('cardOpt').hidden=!gs.length;
+  $('tagFiles').textContent=MEAS.length?`${MEAS.length} file(s)`:'none';
+  $('tagChecks').textContent=gs.length===1?'1 application':`${gs.length} applications`;
+
+  // Quantities are listed under their own layer, so the coating stack itself is readable:
+  // Layer 1 Sn → Layer 2 Ni → Substrate Cu/Zn.
+  $('checksBody').innerHTML=gs.map(g=>{
+    const qs=quantities(g), ref=g.items[0], n=used(g).length;
+    const qrow=q=>{
+      const on=isOn(g,q);
+      return `<div class="qrow ${on?'':'off'}">
+        <input type="checkbox" data-chk="${esc(g.key+'||'+q.key)}" ${on?'checked':''}>
+        <div><div class="qlab">${esc(q.label)} <span class="qsub">(${esc(q.unit)})</span></div>
+             <div class="qsub">${on?`tolerance ±${q.tol} %`:esc(q.why)}</div></div>
+        <input type="text" data-cert="${esc(g.key+'||'+q.key)}" value="${esc(certOf(g,q))}"
+               placeholder="certified" ${on?'':'disabled'}>
+      </div>`;
+    };
+    let depth=0;
+    const stack=ref.layers.map((L,i)=>{
+      const mine=qs.filter(q=>q.li===i);
+      const head=L.substrate?`Substrate — ${esc(L.short)}`:`Layer ${++depth} — ${esc(L.short)}`;
+      return `<div class="lay"><div class="layh">${head}</div>${mine.map(qrow).join('')}</div>`;
+    }).join('');
+    return `<div class="gsec">
+      <div class="gname">${esc(groupLabel(g,gs))}</div>
+      <div class="gmeta">${n} measurement(s) used${g.items.length>n?` of ${g.items.length} loaded`:''}${n<MIN_N?` · below the ${MIN_N} required`:''}</div>
+      ${stack}
+    </div>`;
+  }).join('');
+
+  $('remBody').innerHTML=gs.map(g=>`
+    <label class="fld">Remarks — ${esc(groupLabel(g,gs))}</label>
+    <textarea data-rem="${esc(g.key)}" placeholder="Observations, deviations, actions…">${esc(remarks[g.key]||'')}</textarea>
+  `).join('');
+
+  $('checksBody').querySelectorAll('[data-chk]').forEach(el=>el.onchange=()=>{checkOn[el.dataset.chk]=el.checked;render();});
+  $('checksBody').querySelectorAll('[data-cert]').forEach(el=>{
+    el.oninput=()=>{certVal[el.dataset.cert]=el.value;renderSheets(groups());};
+  });
+  $('remBody').querySelectorAll('[data-rem]').forEach(el=>{
+    el.oninput=()=>{remarks[el.dataset.rem]=el.value;renderSheets(groups());};
+  });
+}
+
+/* ---------- the sheet ---------- */
+function headerBlock(g){
+  const items=used(g);
+  const devs=[...new Map(items.map(m=>[m.device.type+'|'+m.device.sn,m.device])).values()];
+  const dev=devs.map(d=>`${MAKER} ${esc(d.type)} ${MODEL_SUFFIX} · S/N ${esc(d.sn)}`).join('  |  ');
+  // Measurements run through an application carry a measurementProgramUlid; without one the
+  // operator picked the calibration directly. The sheet names whichever it actually was.
+  const kind=g.app?'Application':'Calibration';
+  return `
+  <div class="ac-head">
+    <div class="ttl">
+      <h2>CALIBRATION CONFIRMATION</h2>
+      <div class="sub">Verification against a certified reference</div>
+    </div>
+    <div class="co">
+      <img class="mark" src="${CO_LOGO}" alt="HITACHI">
+      <div class="name">${CO_NAME}</div>
+      <div class="addr">${CO_ADDR}</div>
+    </div>
+  </div>
+  <div class="ac-app">${kind}: ${esc(groupLabel(g))}</div>
+  <div class="ac-dev">${dev||'—'}</div>
+  <div class="ac-meta">Measured on <b>${fmtDate(items[0].timestamp)}</b> · <b>${items.length}</b> measurements</div>`;
+}
+
+function readingsTable(g,rows){
+  if(!rows.length)return '';
+  return `
+  <div class="sect-h">Measurements</div>
+  <table class="data">
+    <thead><tr><th>#</th>${rows.map(r=>`<th class="u">${esc(r.q.label)} (${esc(r.q.unit)})</th>`).join('')}</tr></thead>
+    <tbody>${used(g).map((m,i)=>`<tr><td>${i+1}</td>${rows.map(r=>`<td>${fmt(qVal(m,r.q),r.q.dec)}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function verdictTable(rows){
+  return `
+  <div class="sect-h">Comparison with the certified value</div>
+  <table class="data">
+    <thead><tr>
+      <th>Quantity</th><th>Certified</th><th>Mean</th><th>SD</th><th>RSD</th>
+      <th>Deviation</th><th>Tolerance</th><th>Result</th>
+    </tr></thead>
+    <tbody>${rows.map(({q,e})=>{
+      const d=e.dev==null?'—':`${e.dev>=0?'+':'−'}${fmt(Math.abs(e.dev),2)} %`;
+      return `<tr>
+        <td>${esc(q.label)} <span style="color:var(--muted)">(${esc(q.unit)})</span></td>
+        <td><b>${e.c==null?'—':fmt(e.c,q.dec)}</b></td>
+        <td><b>${e.s?fmt(e.s.mean,q.dec):'—'}</b></td>
+        <td>${e.s&&e.s.sd!=null?fmt(e.s.sd,q.dec):'—'}</td>
+        <td>${e.s&&e.s.rsd!=null?fmt(e.s.rsd,2)+' %':'—'}</td>
+        <td>${d}</td>
+        <td>±${q.tol} %</td>
+        <td><span class="vt ${e.verdict}">${e.verdict==='na'?'—':e.verdict.toUpperCase()}</span></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+/* run chart: readings in measurement order, with the certified value and its tolerance band */
+function runChart(g,q,e){
+  const vals=used(g).map(m=>qVal(m,q));
+  const W=560,H=80,L=46,R=46,T=9,B=10;   // right gutter carries the "mean" / "certified" labels
+  const pts=vals.map((v,i)=>({i,v})).filter(p=>p.v!=null);
+  if(pts.length<2)return '';
+  const lo=e.c!=null?e.c*(1-q.tol/100):null, hi=e.c!=null?e.c*(1+q.tol/100):null;
+  const mean=e.s?e.s.mean:null;
+  const all=pts.map(p=>p.v).concat(lo!=null?[lo,hi,e.c]:[]).concat(mean!=null?[mean]:[]);
+  let mn=Math.min(...all), mx=Math.max(...all); const pad=(mx-mn||Math.abs(mx)||1)*0.15;
+  mn-=pad; mx+=pad;
+  const x=i=>L+(W-L-R)*(pts.length>1?i/(vals.length-1||1):0.5);
+  const y=v=>T+(H-T-B)*(1-(v-mn)/(mx-mn||1));
+  // colours go in style="" not fill="" — var() does not resolve in SVG presentation attributes
+  const band=lo!=null?`<rect x="${L}" y="${y(hi)}" width="${W-L-R}" height="${Math.max(0,y(lo)-y(hi))}" style="fill:var(--pass-bg);stroke:var(--pass-line);stroke-width:.6"/>`:'';
+  // Both reference lines are named — a dashed line with no label is unreadable on a printed sheet.
+  // A good calibration puts mean and certified almost on top of each other, so the two labels must
+  // be pushed apart or they overprint each other exactly when the result is best.
+  let yc=e.c!=null?y(e.c)+3:null, ym=mean!=null?y(mean)+3:null;
+  if(yc!=null&&ym!=null&&Math.abs(yc-ym)<9){const up=ym<=yc?-1:1; ym+=4.5*up; yc-=4.5*up;}
+  // Labels name the line only. The values are in the table directly above, and at this size a
+  // repeated number is unreadable rather than informative.
+  const cline=e.c!=null?`<line x1="${L}" x2="${W-R}" y1="${y(e.c)}" y2="${y(e.c)}" style="stroke:var(--pass);stroke-width:1" stroke-dasharray="4 3"/>
+    <text x="${W-R+5}" y="${yc.toFixed(1)}" font-size="8.5" style="fill:var(--pass)">certified</text>`:'';
+  // the mean gets its own colour — blue is already the measured series, and two blue lines read as one broken line
+  const mline=mean!=null?`<line x1="${L}" x2="${W-R}" y1="${y(mean)}" y2="${y(mean)}" style="stroke:var(--mean);stroke-width:1.1"/>
+    <text x="${W-R+5}" y="${ym.toFixed(1)}" font-size="8.5" style="fill:var(--mean)">mean</text>`:'';
+  const path=pts.map((p,k)=>`${k?'L':'M'}${x(p.i).toFixed(1)},${y(p.v).toFixed(1)}`).join('');
+  const dots=pts.map(p=>{
+    const out=lo!=null&&(p.v<lo||p.v>hi);
+    return `<circle cx="${x(p.i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.4" style="fill:var(${out?'--fail':'--brand'})"/>`;
+  }).join('');
+  const ax=[mn,mx].map(v=>`<text x="${L-5}" y="${(y(v)+3).toFixed(1)}" text-anchor="end" font-size="8" fill="#5b6472">${fmt(v,q.dec)}</text>`).join('');
+  return `<div class="chart-box"><h4>${esc(q.label)} (${esc(q.unit)}) — reading order</h4>
+    <svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+      ${band}${cline}${mline}
+      <line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="#c8cfd8"/>
+      <line x1="${L}" x2="${L}" y1="${T}" y2="${H-B}" stroke="#c8cfd8"/>
+      ${ax}
+      <path d="${path}" fill="none" stroke="var(--brand)" stroke-width="1.3"/>
+      ${dots}
+    </svg></div>`;   /* no x-axis caption — the heading already says "reading order" */
+}
+
+function criteriaBlock(n,rows){
+  const short=n<MIN_N
+    ? ` Fewer than ${MIN_N} measurements were made (n = ${n}); the minimum is not met and the result above is informative only.`
+    : '';
+  // the composition limit is only stated when a composition row is actually being judged —
+  // an unstated criterion on a customer document is worse than one extra clause
+  const comp=rows.some(r=>r.q.kind==='el')?`, composition ±${TOL_COMP} %`:'';
+  return `<div class="crit">
+    Acceptable deviation of the mean from the certified value — first layer ±${TOL_TH[0]} %,
+    second ±${TOL_TH[1]} %, third ±${TOL_TH[2]} %, fourth ±${TOL_TH[3]} %${comp}.
+    SD: standard deviation of the measurements, RSD: standard deviation divided by the mean.${short}
+  </div>`;
+}
+
+function signBlock(g){
+  const rem=(remarks[g.key]||'').trim();
+  return `<div class="signoff">
+    ${rem?`<div class="sect-h" style="margin-top:0">Remarks</div><div class="rem">${esc(rem)}</div>`:''}
+    <div class="sigwrap"><div class="sigrow">
+      <div><div class="val">${esc(settings.engineer)||'&nbsp;'}</div><div class="line">Engineer</div></div>
+      <div><div class="val">${esc(settings.signdate)||'&nbsp;'}</div><div class="line">Date</div></div>
+      <div class="sig"><div class="line">Signature</div></div>
+    </div></div>
+  </div>`;
+}
+
+function sheet(g,gi,gs){
+  const v=groupVerdict(g);
+  const rows=v.rows;
+  const incomplete=v.state==='na'?`<div class="note">${esc(v.why)}</div>`:'';
+  const charts=showCharts?rows.map(r=>runChart(g,r.q,r.e)).join(''):'';
+  return `<section class="sheet" data-gi="${gi}">
+    ${headerBlock(g)}
+    ${rows.length?verdictTable(rows):''}
+    ${incomplete}
+    ${criteriaBlock(v.n,rows)}
+    ${readingsTable(g,rows)}
+    ${charts}
+    ${signBlock(g)}
+  </section>`;
+}
+
+function renderSheets(gs){
+  $('out').innerHTML=gs.length
+    ? gs.map((g,i)=>sheet(g,i,gs)).join('')
+    : `<div class="empty"><h2>No measurements loaded</h2>
+       <p>Drop the individual <b>measurement-*.json</b> files on the left. Files are grouped by application /
+       calibration, and each group is printed as its own A4 sheet.</p></div>`;
+}
+function render(){const gs=groups();renderSidebar(gs);renderSheets(gs);}
+
+/* ---------- wiring ---------- */
+$('appVer').textContent='v'+VERSION;
+$('maxUseTxt').textContent=MAX_USE;
+$('signdate').value=settings.signdate=todayDE();
+
+$('drop').onclick=()=>$('file').click();
+$('file').onchange=e=>{loadFiles(e.target.files);e.target.value='';};
+['dragenter','dragover'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('over');}));
+['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('over');}));
+$('drop').addEventListener('drop',e=>loadFiles(e.dataTransfer.files));
+$('clearBtn').onclick=()=>{MEAS=[];$('loadInfo').textContent='No measurements loaded.';render();};
+
+['engineer','signdate'].forEach(k=>{$(k).oninput=()=>{settings[k]=$(k).value;renderSheets(groups());};});
+$('showCharts').onchange=e=>{showCharts=e.target.checked;renderSheets(groups());};
+$('printBtn').onclick=()=>window.print();
+
+render();
+</script>
+</body>
+</html>
