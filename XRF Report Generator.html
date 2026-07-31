@@ -385,14 +385,15 @@
 
 <script>
 "use strict";
-/* Version — MAJOR.MINOR.PATCH
+/* Version — MAJOR.MINOR.PATCH (trailing zeros may be dropped, e.g. '2.0')
      MAJOR  the printed report changes shape (sections move, columns restructured) — a v2 PDF
             does not look like a v1 PDF, so an archived report is identifiable by its major.
      MINOR  a new capability that leaves existing reports looking the same (a new option, a new field).
      PATCH  a fix or a tweak, nothing new.
-   Bump this in the same commit as the change, and add a line to CHANGELOG.md. Shown in the
-   sidebar only — the sidebar is hidden when printing, so it never lands in a customer's PDF. */
-const APP_VERSION='2.7.2';
+   Bump ONCE PER RELEASED SET OF CHANGES, not once per edit — a session's worth of tweaks is one
+   version. Record it in CHANGELOG.md. Shown in the sidebar only, which is hidden when printing,
+   so it never lands in a customer's PDF. */
+const APP_VERSION='2.0';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
