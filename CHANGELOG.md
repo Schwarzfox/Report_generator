@@ -14,6 +14,13 @@ Bump the version in the same commit as the change and add a line here.
 
 ---
 
+## 2.6.1
+
+Spectrum palette set to `#3380ff` / `#ef476f` / `#ffd166`. The blue is the same one the statistics
+chart plots its readings in, so a reading looks the same in both charts. `#ffd166` is pale against
+white, so that trace carries extra stroke weight. Slots 4–6 extended in the same family:
+`#118ab2`, `#8338ec`, `#073b4c`.
+
 ## 2.6.0
 
 **Instrument line sized per orientation** — 22px in landscape, 18px in portrait, where the narrower

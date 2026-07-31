@@ -384,7 +384,7 @@
      PATCH  a fix or a tweak, nothing new.
    Bump this in the same commit as the change, and add a line to CHANGELOG.md. Shown in the
    sidebar only — the sidebar is hidden when printing, so it never lands in a customer's PDF. */
-const APP_VERSION='2.6.0';
+const APP_VERSION='2.6.1';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
@@ -394,14 +394,16 @@ const SPEC_OVERLAY_MAX=6;
    one reads through the dashed one, and the dotted one drawn last leaves gaps to see through. */
 /* Overlaid directly on top of each other, fully opaque. Reading #1 is the reference and is painted
    LAST so it sits in front; later readings recede behind it. Because the front trace is solid and
-   would otherwise hide the rest, everything behind it is dashed or dotted and reads through the gaps. */
+   would otherwise hide the rest, everything behind it is dashed or dotted and reads through the gaps.
+   #3380ff is the same blue the statistics chart plots its readings in, so a reading looks the same
+   in both charts. #ffd166 is pale against white, so it carries extra stroke weight to compensate. */
 const SPEC_STYLES=[
-  {color:'#1a4fb5',dash:'',        width:1.6},   // reading #1 — solid navy, in front
-  {color:'#c81e3a',dash:'6 3',     width:1.3},   // dashed crimson
-  {color:'#e07000',dash:'2 3.5',   width:1.3},   // dotted amber
-  {color:'#6d28d9',dash:'9 3 2 3', width:1.2},   // dash-dot violet
-  {color:'#0e7490',dash:'4 4',     width:1.2},   // dashed cyan
-  {color:'#57534e',dash:'1 4',     width:1.4}    // sparse dot stone
+  {color:'#3380ff',dash:'',        width:1.6},   // reading #1 — solid blue, in front (matches the SPC chart)
+  {color:'#ef476f',dash:'6 3',     width:1.4},   // dashed rose
+  {color:'#ffd166',dash:'2 3.5',   width:1.8},   // dotted amber — pale, so drawn heavier
+  {color:'#118ab2',dash:'9 3 2 3', width:1.3},   // dash-dot cerulean
+  {color:'#8338ec',dash:'4 4',     width:1.3},   // dashed violet
+  {color:'#073b4c',dash:'1 4',     width:1.5}    // sparse dot deep slate
 ];
 const specStyle=i=>SPEC_STYLES[i%SPEC_STYLES.length];
 
