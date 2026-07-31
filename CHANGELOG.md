@@ -14,6 +14,27 @@ Bump the version in the same commit as the change and add a line here.
 
 ---
 
+## 2.6.0
+
+**Instrument line sized per orientation** — 22px in landscape, 18px in portrait, where the narrower
+middle column was pushing the name onto a third line. The serial follows at 15px / 13.5px.
+
+**Company and customer logos share a top edge.** The header row was centring each block vertically,
+so identical logos sat at different heights whenever one block had more lines than the other (a Job
+number, a longer address). Blocks are top-aligned now; only the instrument stays vertically centred.
+
+**Calibration / application is plain text**, not a chip.
+
+**Moving-range chart gained its centre line.** It had a UCL and nothing else, while the run chart
+above it shows mean, UCL and LCL. It now draws MR-bar, the average change between consecutive
+readings. There is deliberately still no LCL: a range cannot fall below zero, so the axis floor is
+the lower limit.
+
+**Spectrum paint order reversed.** Reading #1 is the reference, so it is painted last and sits in
+front; later readings recede behind it in order. Previously the last trace was drawn on top, which
+made the whole chart read as amber. The front trace is solid and slightly heavier; everything behind
+it is dashed or dotted so it reads through the gaps. Legend order is unchanged.
+
 ## 2.5.0
 
 **One notation for standard deviation: SD.** The same concept was appearing four ways — `SD` in the

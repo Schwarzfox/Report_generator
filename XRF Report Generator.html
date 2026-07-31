@@ -101,10 +101,12 @@
   .profbar button{flex:1;font-size:12px;padding:6px 4px}
   .warn{font-size:12px;color:#b3541e;margin-top:8px}
   /* company | instrument | customer — the instrument sits in what used to be dead space */
-  .rg-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;
+  /* company | instrument | customer. align-items:start makes the two logos share a top edge —
+     centring them made identical logos sit at different heights whenever one block had more lines. */
+  .rg-head{display:grid;grid-template-columns:1fr 1.25fr 1fr;align-items:start;gap:18px;
     border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:6px}
   .party{min-width:0}
-  .party.mid{text-align:center}
+  .party.mid{text-align:center;align-self:center}
   .party.right{text-align:right}
   .party img{max-height:68px;max-width:230px;object-fit:contain;display:block;margin-bottom:6px}
   .party.right img{margin-left:auto}
@@ -112,12 +114,16 @@
   .party .addr{font-size:11.5px;color:var(--muted);white-space:pre-line}
   .rg-title{font-size:20px;font-weight:700;margin:14px 0 2px}          /* user's own title — left, like the rest of the page */
   .rg-sub{font-size:12.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
-  .rg-cal{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-weight:600;color:var(--ink)}
+  .rg-cal{font-weight:600;color:var(--ink)}
   /* Permanent instrument line — always printed. Letterhead treatment: centred and letterspaced,
      the same size as the title so it reads as a header without outranking what the report IS. */
   /* fixed instrument identity — always printed, centred between the two parties */
-  .rg-device .dev{display:block;font-size:19px;font-weight:700;color:var(--ink);line-height:1.2}
-  .rg-device .sn{display:block;font-size:14px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:2px}
+  /* Portrait's middle column is too narrow for 22px — the name ran to three lines. Two lines fit
+     at 18px; landscape has the width to carry the larger size. */
+  .rg-device .dev{display:block;font-size:18px;font-weight:700;color:var(--ink);line-height:1.18}
+  .rg-device .sn{display:block;font-size:13.5px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:3px}
+  body.or-landscape .rg-device .dev{font-size:22px}
+  body.or-landscape .rg-device .sn{font-size:15px}
   .rg-device .dev+.dev{margin-top:6px}
   /* abbreviation key — small, right-aligned, closes out the section it belongs to */
   .abbr{font-size:9.5px;line-height:1.5;color:#8b95a3;text-align:right;margin:-12px 0 18px;padding-left:18%}
@@ -378,7 +384,7 @@
      PATCH  a fix or a tweak, nothing new.
    Bump this in the same commit as the change, and add a line to CHANGELOG.md. Shown in the
    sidebar only — the sidebar is hidden when printing, so it never lands in a customer's PDF. */
-const APP_VERSION='2.5.0';
+const APP_VERSION='2.6.0';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
@@ -386,16 +392,16 @@ const SPEC_OVERLAY_MAX=6;
 /* Overlaid spectra of the same sample sit almost exactly on top of each other, so colour alone
    cannot separate them. Each trace gets its own colour AND dash pattern AND opacity: the solid
    one reads through the dashed one, and the dotted one drawn last leaves gaps to see through. */
-/* Overlaid directly on top of each other, fully opaque. Separation comes from hue and from the
-   dash pattern: each successive trace is drawn over the last but leaves gaps, so the ones beneath
-   stay visible through them. Drawn solid → dashed → dotted for that reason. No green. */
+/* Overlaid directly on top of each other, fully opaque. Reading #1 is the reference and is painted
+   LAST so it sits in front; later readings recede behind it. Because the front trace is solid and
+   would otherwise hide the rest, everything behind it is dashed or dotted and reads through the gaps. */
 const SPEC_STYLES=[
-  {color:'#1a4fb5',dash:'',        width:1.2},   // solid navy
-  {color:'#c81e3a',dash:'7 4',     width:1.3},   // dashed crimson
-  {color:'#e07000',dash:'2 3.5',   width:1.6},   // dotted amber
-  {color:'#6d28d9',dash:'9 3 2 3', width:1.3},   // dash-dot violet
-  {color:'#0e7490',dash:'4 4',     width:1.3},   // dashed cyan
-  {color:'#57534e',dash:'1 4',     width:1.6}    // sparse dot stone
+  {color:'#1a4fb5',dash:'',        width:1.6},   // reading #1 — solid navy, in front
+  {color:'#c81e3a',dash:'6 3',     width:1.3},   // dashed crimson
+  {color:'#e07000',dash:'2 3.5',   width:1.3},   // dotted amber
+  {color:'#6d28d9',dash:'9 3 2 3', width:1.2},   // dash-dot violet
+  {color:'#0e7490',dash:'4 4',     width:1.2},   // dashed cyan
+  {color:'#57534e',dash:'1 4',     width:1.4}    // sparse dot stone
 ];
 const specStyle=i=>SPEC_STYLES[i%SPEC_STYLES.length];
 
@@ -946,6 +952,9 @@ function spcChart(pts,s,lim,q){
   for(let k=0;k<=2;k++){const cv=mrmax*k/2,y=Ymr(cv);
     g+=`<line x1="${RL}" y1="${y.toFixed(1)}" x2="${RL+RW}" y2="${y.toFixed(1)}" stroke="#c6d0db"/><text x="${RL-4}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#414c5d">${axLabel(cv)}</text>`;}
   {const y=Ymr(mrucl);g+=`<line x1="${RL}" y1="${y.toFixed(1)}" x2="${RL+RW}" y2="${y.toFixed(1)}" stroke="${limColor}" stroke-width="1" stroke-dasharray="4 3"/><text x="${RL+RW+3}" y="${(y+3).toFixed(1)}" font-size="8.5" fill="${limColor}">UCL</text>`;}
+  // centre line: the average change between consecutive readings. There is deliberately no LCL —
+  // a range cannot fall below zero, so the axis floor IS the lower limit.
+  {const y=Ymr(mrbar);g+=`<line x1="${RL}" y1="${y.toFixed(1)}" x2="${RL+RW}" y2="${y.toFixed(1)}" stroke="#d1342f" stroke-width="1" stroke-dasharray="2 2"/><text x="${RL+RW+3}" y="${(y+3).toFixed(1)}" font-size="8.5" fill="#d1342f">mean</text>`;}
   g+=`<polyline points="${mr.map(m=>`${cx(m.i).toFixed(1)},${Ymr(m.v).toFixed(1)}`).join(' ')}" fill="none" stroke="#3380ff" stroke-width="1.6"/>`;
   mr.forEach(m=>{const x=cx(m.i),y=Ymr(m.v);g+=`<rect x="${(x-1.4).toFixed(1)}" y="${(y-1.4).toFixed(1)}" width="2.8" height="2.8" fill="#16388f"/>`;});
   const step=Math.max(1,Math.round(n/8));
@@ -1025,6 +1034,7 @@ function spectrumChart(items){
   g+=`<text x="${padL+iw/2}" y="${H-2}" text-anchor="middle" font-size="10" fill="#1b2431">Energy (keV)</text>`;
   g+=`<text x="12" y="${padT+ih/2}" text-anchor="middle" font-size="10" fill="#1b2431" transform="rotate(-90 12 ${padT+ih/2})">Intensity (cps)</text>`;
   let legend='';
+  const traces=[];           // built in reading order, painted back-to-front below
   const NB=Math.round(iw);   // one bucket per horizontal pixel of the viewBox
   shown.forEach((m,idx)=>{const v=cps(m); if(!v.length)return;const st=specStyle(idx);
     const dash=st.dash?` stroke-dasharray="${st.dash}" stroke-linecap="round"`:'';
@@ -1044,11 +1054,14 @@ function spectrumChart(items){
       last=val;
       pts+=`${(padL+iw*(b/NB)).toFixed(1)},${Y(val).toFixed(1)} `;
     }
-    g+=`<polyline points="${pts}" fill="none" stroke="${st.color}" stroke-width="${st.width}" stroke-linejoin="round"${dash}/>`;
+    traces[idx]=`<polyline points="${pts}" fill="none" stroke="${st.color}" stroke-width="${st.width}" stroke-linejoin="round"${dash}/>`;
     // the legend swatch is the actual line, dashes and all — a colour chip alone would not identify it
     legend+=`<span><svg class="lgl" width="22" height="9" viewBox="0 0 22 9" aria-hidden="true">`+
       `<line x1="0.5" y1="4.5" x2="21.5" y2="4.5" stroke="${st.color}" stroke-width="${Math.max(2,st.width)}"${dash}/>`+
       `</svg>${esc(m.sample)} · #${pick[idx]+1}</span>`;});   // #N = the reading number in the results table
+  // In SVG the last thing drawn wins. Paint the highest reading first and reading #1 last, so the
+  // first spectrum sits in front and the later ones recede behind it in order.
+  for(let i=traces.length-1;i>=0;i--) if(traces[i]) g+=traces[i];
   const parts=[];
   if(many) parts.push(`Showing readings #1, #${Math.floor((items.length-1)/2)+1} and #${items.length} (first, middle, last) of ${items.length}.`);
   const note=parts.length?`<div class="note" style="margin-top:4px">${parts.join(' ')}</div>`:'';
