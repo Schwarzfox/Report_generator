@@ -14,6 +14,13 @@ working session is one version.
 
 ---
 
+## 2.1
+
+- **Company / customer block made more prominent.** Name 14px → 18px, address 11.5px → 13px, logo
+  cap 68px → 80px — they were reading as an afterthought next to the instrument header.
+
+---
+
 ## 2.0
 
 Rewrite of the v1 generator. Everything below shipped together.
