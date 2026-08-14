@@ -14,6 +14,76 @@ working session is one version.
 
 ---
 
+## 2.2
+
+German language support, plus a review pass over the whole generator. In English nothing about a
+correct report changes — the fixes are about reports that were wrong, and about the tool appearing
+to do nothing.
+
+### German (EN / DE)
+
+- **A language switch at the top of the sidebar**, remembered with the rest of your settings. It
+  translates the whole tool: every sidebar label, placeholder, tooltip, dropdown option, prompt and
+  confirm, and every string on the printed report — headings, table headers, chart labels and axes,
+  the abbreviation keys, and Pass/Fail as **i.O. / n.i.O.**
+- **Numbers use a decimal comma in German** (`0,014` not `0.014`), across measured values,
+  statistics and chart axes. Sample names, calibration IDs and dates keep their own punctuation —
+  a sample called `Sn9.04-Zn1.756` is not a number and is left alone.
+- **Notation stays identical in both languages.** `SD`, `RSD`, `n`, `UCL`, `LCL`, `cps`, `keV`,
+  `wt%`, `μm` are unchanged; only the explanation in the abbreviation key is translated. One
+  concept, one notation, whichever language the report is in.
+- **The instrument line reads `HITACHI FT230 Schichtdickenmessgerät`.** `HITACHI` and the model
+  number are identity and never translate; the descriptor after them does.
+- **Terminology is the German the trade actually uses**, not literal translation: `Messergebnisse`,
+  `Prüfer`, `Spannweite`, `Häufigkeit` on the histogram axis, `Grenzwerte` for limits,
+  `Eingriffsgrenzen` for UCL/LCL, `Wiederholmessungen`, `Flächenmasse` for g/m². The statistics
+  table's first column is `Schicht / Element` — every row is one or the other, which beats an
+  abstract measurand word on a report a customer reads.
+- **Your own text is never touched.** Switching language rewrites the report title only if it is
+  still our untouched default; anything you typed stays exactly as you typed it.
+- Implemented as one `STR` table keyed `en`/`de` in the single HTML file, with static markup
+  carrying `data-i18n` hooks — no second file to keep in sync.
+
+### Wrong on paper
+
+- **SD and RSD are no longer reported for a single measurement.** `stats()` returned `sd: 0` at
+  n = 1, so single-shot reports printed "SD 0.00 · RSD 0.00%" — a claim of perfect repeatability
+  from one reading. SD is undefined when the sample formula divides by n−1; both now print `—`.
+  Mean, Min, Max and Range are unaffected (Range really is 0 for one reading).
+- **The same element in two layers no longer prints two identical column headers.** A stack with,
+  say, Fe in both the coating and the substrate produced two `Fe (wt%)` columns over different
+  numbers. The layer is named only when there is a collision — `Fe in Ni (wt%)` — so the usual
+  single-occurrence header stays short. Layer position is added if two layers share a name.
+- **The spectrum axis no longer labels raw counts as cps.** With no live time to divide by, the
+  trace is counts; the axis now says so instead of claiming counts per second.
+
+### Appeared broken
+
+- **Switching between loaded calibrations reloads the report-text fields.** Title, Operator, Notes
+  and the calibration-name override kept showing the *previous* group's text while the report below
+  showed the new group's — and the next keystroke silently overwrote the new group with the old
+  text. The inputs now reload on a group change, and only on a group change, so typing is never
+  interrupted mid-field.
+- **Choosing the same files twice now works.** A file input only fires `change` when the selection
+  changes, so Clear → Choose files → pick the same files did nothing at all. Same fix for the two
+  logo pickers: removing a logo and re-uploading the same file was equally dead.
+- **Skipped files are counted.** Dropping a folder of `lmm-` twins reported "0 measurement(s)
+  loaded" and nothing else, which reads as a broken tool. The load line now ends with
+  "· N other file(s) skipped" — a count only. Which files and why is the tool's business, not
+  something the user should have to read.
+
+### Smaller
+
+- Column checkboxes built in JavaScript carry an id their label points at, so clicking the text
+  toggles them like every other toggle in the sidebar.
+- "Clear loaded data" also drops the per-calibration column choices, which otherwise accumulated in
+  localStorage forever alongside the base64 logos. The confirm text says so.
+- Toolbar hint corrected: only the selected group is rendered, so there was never a second group to
+  print. Removed the page-break rule that waited for one.
+- `compositionReport()`'s empty-group check moved above the loop, where it can actually fire.
+
+---
+
 ## 2.1
 
 - **Company / customer block made more prominent.** Name 14px → 18px, address 11.5px → 13px, logo
