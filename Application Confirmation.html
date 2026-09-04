@@ -26,6 +26,9 @@
 
   .app{display:grid;grid-template-columns:360px 1fr;min-height:100vh}
   .side{background:#eef1f5;border-right:1px solid #d7dde6;padding:18px;overflow-y:auto;max-height:100vh}
+  .langbar{display:flex;gap:4px;margin-bottom:10px}
+  .langbar button{padding:3px 10px;font-size:11.5px;font-weight:700;letter-spacing:.04em;border-radius:6px}
+  .langbar button.active{background:var(--brand);color:#fff;border-color:var(--brand)}
   .side h1{font-size:17px}
   .side .sub{color:var(--muted);font-size:12px;margin-bottom:14px}
   .ver{font-size:11px;font-weight:600;color:var(--muted);background:var(--chip);border:1px solid var(--line);
@@ -112,7 +115,7 @@
   .note{margin:8px 0;border-radius:7px;padding:7px 11px;font-size:11.5px;line-height:1.4;
     background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn)}
 
-  .crit{font-size:10.5px;color:var(--muted);line-height:1.5;margin-top:5px}
+  .crit{font-size:10.5px;color:var(--muted);line-height:1.5;text-align:right;margin:12px 0 14px}
   .crit b{color:var(--ink)}
 
   .signoff{margin-top:10px;border-top:1.5px solid var(--t-edge);padding-top:7px;page-break-inside:avoid}
@@ -151,42 +154,50 @@
 <body>
 <div class="app">
   <aside class="side">
-    <h1>Application Confirmation <span class="ver" id="appVer"></span></h1>
-    <div class="sub">Verify a calibration against a certified reference.</div>
+    <div class="langbar">
+      <button id="lang_en" data-lang="en">EN</button><button id="lang_de" data-lang="de">DE</button>
+    </div>
+    <h1><span data-i18n="ui_appname"></span> <span class="ver" id="appVer"></span></h1>
+    <div class="sub" data-i18n="ui_sub"></div>
 
     <details class="card" id="cardFiles" open>
-      <summary>Measurements <span class="tag" id="tagFiles">none</span></summary>
+      <summary><span data-i18n="ui_c_files"></span> <span class="tag" id="tagFiles"></span></summary>
       <div class="body">
-        <div class="drop" id="drop">Drop <b>measurement-*.json</b> files here<br>or click to choose</div>
+        <div class="drop" id="drop" data-i18n-html="ui_drop"></div>
         <input type="file" id="file" accept=".json,application/json" multiple hidden>
-        <div class="hint" id="loadInfo">No measurements loaded.</div>
+        <div class="hint" id="loadInfo" data-i18n="ui_no_meas"></div>
         <div class="row" style="margin-top:9px">
-          <button id="clearBtn" type="button">Clear all</button>
+          <button id="clearBtn" type="button" data-i18n="ui_clear"></button>
         </div>
       </div>
     </details>
 
     <details class="card" id="cardChecks" hidden open>
-      <summary>Certified values <span class="tag" id="tagChecks"></span></summary>
+      <summary><span data-i18n="ui_c_checks"></span> <span class="tag" id="tagChecks"></span></summary>
       <div class="body" id="checksBody"></div>
     </details>
 
     <details class="card" id="cardSign">
-      <summary>Sign-off</summary>
+      <summary data-i18n="ui_c_sign"></summary>
       <div class="body">
-        <label class="fld">Engineer</label>
-        <input type="text" id="engineer" placeholder="Name of the responsible engineer">
-        <label class="fld">Date</label>
-        <input type="text" id="signdate" placeholder="dd.mm.yyyy">
-        <div class="hint">Pre-filled with today — overwrite it if the confirmation is dated differently.</div>
+        <label class="fld" data-i18n="ui_f_engineer"></label>
+        <input type="text" id="engineer" data-i18n-ph="ui_ph_engineer">
+        <label class="fld" data-i18n="ui_f_title"></label>
+        <input type="text" id="engineerTitle" data-i18n-ph="ui_ph_title">
+        <label class="fld" data-i18n="ui_f_date"></label>
+        <input type="text" id="signdate" data-i18n-ph="ui_ph_date">
+        <div class="hint" data-i18n="ui_sign_hint"></div>
       </div>
     </details>
 
     <details class="card" id="cardOpt" hidden>
-      <summary>Options &amp; remarks</summary>
+      <summary data-i18n="ui_c_opt"></summary>
       <div class="body">
-        <label class="chk"><input type="checkbox" id="showCharts"> Show run charts on the sheet</label>
-        <div class="hint">At most <span id="maxUseTxt"></span> measurements are evaluated and listed — more adds nothing to the confirmation.</div>
+        <label class="chk"><input type="checkbox" id="showCharts"> <span data-i18n="ui_showcharts"></span></label>
+        <label class="fld" data-i18n="ui_f_maxuse"></label>
+        <input type="number" id="maxUse" min="1" step="1" data-i18n-ph="ui_ph_maxuse">
+        <label class="chk"><input type="checkbox" id="rememberMaxUse"> <span data-i18n="ui_remember_maxuse"></span></label>
+        <div class="hint" data-i18n="ui_maxuse_hint"></div>
         <div id="remBody"></div>
       </div>
     </details>
@@ -196,7 +207,7 @@
   <main class="main">
     <div class="toolbar">
       <span class="sp"></span>
-      <button type="button" id="printBtn" class="primary">Print / Save PDF</button>
+      <button type="button" id="printBtn" class="primary" data-i18n="ui_print"></button>
     </div>
     <div id="out"></div>
   </main>
@@ -204,18 +215,124 @@
 
 <script>
 "use strict";
-const VERSION='1.0.0';
+const VERSION='1.1';
 const $=id=>document.getElementById(id);
 
 /* ---------- constants ---------- */
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
-const MAKER='HITACHI', MODEL_SUFFIX='Coating Analyzer';
+const MAKER='HITACHI';
+
+/* ---------- language ----------
+   ONE table, keyed by string id, each holding {en,de}. Every user-visible string goes through t().
+   Static markup carries data-i18n / data-i18n-ph / data-i18n-html and is refreshed by applyLang().
+   Not translated on purpose: HITACHI / FT230 / "Coating Analyzer" notation-adjacent product name is
+   translated like the sibling report generator does (rep_model_suffix there); SD, RSD, ±, % — the
+   notation is identical in both languages, only the surrounding prose changes. German technical
+   documents use a decimal comma, so displayed measurement values are converted too (see fmt()). */
+const STR={
+  model_suffix:{en:'Coating Analyzer',de:'Schichtdickenmessgerät'},
+  ui_appname:{en:'Application Confirmation',de:'Applikationsbestätigung'},
+  ui_sub:{en:'Verify a calibration against a certified reference.',de:'Kalibrierung gegen einen zertifizierten Referenzwert prüfen.'},
+  ui_c_files:{en:'Measurements',de:'Messungen'},
+  ui_drop:{en:'Drop <b>measurement-*.json</b> files here<br>or click to choose',
+           de:'<b>measurement-*.json</b>-Dateien hier ablegen<br>oder zum Auswählen klicken'},
+  ui_no_meas:{en:'No measurements loaded.',de:'Keine Messungen geladen.'},
+  ui_clear:{en:'Clear all',de:'Alles löschen'},
+  ui_c_checks:{en:'Certified values',de:'Zertifizierte Werte'},
+  ui_c_sign:{en:'Sign-off',de:'Freigabe'},
+  ui_f_engineer:{en:'Engineer',de:'Prüfer'},
+  ui_ph_engineer:{en:'Name of the responsible engineer',de:'Name des verantwortlichen Prüfers'},
+  ui_f_title:{en:'Title',de:'Position'},
+  ui_ph_title:{en:'e.g. Application Engineer',de:'z. B. Applikationsingenieur'},
+  ui_f_date:{en:'Date',de:'Datum'},
+  ui_ph_date:{en:'dd.mm.yyyy',de:'tt.mm.jjjj'},
+  ui_sign_hint:{en:'Pre-filled with today — overwrite it if the confirmation is dated differently. Engineer and title are remembered for next time.',
+                de:'Mit dem heutigen Datum vorausgefüllt — bei abweichendem Datum überschreiben. Prüfer und Position werden für das nächste Mal gespeichert.'},
+  ui_c_opt:{en:'Options & remarks',de:'Optionen & Bemerkungen'},
+  ui_showcharts:{en:'Show run charts on the sheet',de:'Verlaufsdiagramme auf dem Blatt anzeigen'},
+  ui_f_maxuse:{en:'Measurements to use',de:'Zu verwendende Messungen'},
+  ui_ph_maxuse:{en:'all loaded',de:'alle geladenen'},
+  ui_remember_maxuse:{en:'Remember my choice',de:'Meine Auswahl merken'},
+  ui_maxuse_hint:{en:'Leave blank to use everything loaded. Set a number to cap it (e.g. only the first 10). Tick "Remember my choice" to keep using that number next time, even if more measurements are loaded.',
+                  de:'Leer lassen, um alle geladenen Messungen zu verwenden. Zahl eingeben, um zu begrenzen (z. B. nur die ersten 10). „Meine Auswahl merken“ aktivieren, um diese Zahl auch beim nächsten Mal zu verwenden, selbst wenn mehr Messungen geladen werden.'},
+  ui_print:{en:'Print / Save PDF',de:'Drucken / Als PDF speichern'},
+  ui_empty_h:{en:'No measurements loaded',de:'Keine Messungen geladen'},
+  ui_empty_p:{en:'Drop the individual <b>measurement-*.json</b> files on the left. Files are grouped by application / calibration, and each group is printed as its own A4 sheet.',
+              de:'Die einzelnen <b>measurement-*.json</b>-Dateien links ablegen. Dateien werden nach Applikation / Kalibrierung gruppiert, jede Gruppe wird als eigenes A4-Blatt gedruckt.'},
+  ui_loaded:{en:'{n} measurement(s) loaded',de:'{n} Messung(en) geladen'},
+  ui_dups:{en:' · {n} duplicate(s) skipped',de:' · {n} Duplikat(e) übersprungen'},
+  ui_skipped:{en:' · {n} file(s) ignored',de:' · {n} Datei(en) ignoriert'},
+  ui_none_usable:{en:'No usable measurements found. Use the single measurement-*.json files.',
+                  de:'Keine verwertbaren Messungen gefunden. Bitte die einzelnen measurement-*.json-Dateien verwenden.'},
+  tag_none:{en:'none',de:'keine'},
+  tag_files:{en:'{n} file(s)',de:'{n} Datei(en)'},
+  tag_1app:{en:'1 application',de:'1 Applikation'},
+  tag_napps:{en:'{n} applications',de:'{n} Applikationen'},
+  lbl_layer:{en:'Layer {n} — {name}',de:'Schicht {n} — {name}'},
+  lbl_substrate:{en:'Substrate — {name}',de:'Substrat — {name}'},
+  lbl_tolerance:{en:'tolerance ±{tol} %',de:'Toleranz ±{tol} %'},
+  ph_certified:{en:'certified',de:'zertifiziert'},
+  gm_used:{en:'{n} measurement(s) used',de:'{n} Messung(en) verwendet'},
+  gm_added:{en:'{tot} added, {n} currently used',de:'{tot} hinzugefügt, {n} aktuell verwendet'},
+  gm_below:{en:' · below the {min} required',de:' · unter dem geforderten Minimum von {min}'},
+  fld_remarks:{en:'Remarks — {label}',de:'Bemerkungen — {label}'},
+  ph_remarks:{en:'Observations, deviations, actions…',de:'Beobachtungen, Abweichungen, Maßnahmen …'},
+  q_thickness:{en:'{name} thickness',de:'Schichtdicke {name}'},
+  q_content:{en:'{sym} content',de:'{sym}-Gehalt'},
+  q_in:{en:'{sym} in {short}',de:'{sym} in {short}'},
+  why_substrate:{en:'substrate — not measured',de:'Substrat — nicht gemessen'},
+  why_layer:{en:'layer {n}',de:'Schicht {n}'},
+  why_pure:{en:'pure element — 100 % by definition',de:'reines Element — per Definition 100 %'},
+  why_comp:{en:'composition, layer {n}',de:'Zusammensetzung, Schicht {n}'},
+  sheet_title:{en:'CALIBRATION CONFIRMATION',de:'KALIBRIERBESTÄTIGUNG'},
+  sheet_sub:{en:'Verification against a certified reference',de:'Verifizierung gegen einen zertifizierten Referenzwert'},
+  kind_app:{en:'Application',de:'Applikation'},
+  kind_calib:{en:'Calibration',de:'Kalibrierung'},
+  sheet_measured:{en:'Measured on <b>{date}</b> · <b>{n}</b> measurements',
+                  de:'Gemessen am <b>{date}</b> · <b>{n}</b> Messungen'},
+  sect_measurements:{en:'Measurements',de:'Messungen'},
+  sect_comparison:{en:'Comparison with the certified value',de:'Vergleich mit dem zertifizierten Wert'},
+  th_quantity:{en:'Quantity',de:'Schicht / Element'},
+  th_certified:{en:'Certified',de:'Zertifiziert'},
+  th_mean:{en:'Mean',de:'Mittelwert'},
+  th_sd:{en:'SD',de:'SD'},
+  th_rsd:{en:'RSD',de:'RSD'},
+  th_deviation:{en:'Deviation',de:'Abweichung'},
+  th_tolerance:{en:'Tolerance',de:'Toleranz'},
+  th_result:{en:'Result',de:'Ergebnis'},
+  val_pass:{en:'PASS',de:'I.O.'},
+  val_fail:{en:'FAIL',de:'N.I.O.'},
+  note_noqty:{en:'No quantity selected for this application.',de:'Für diese Applikation ist keine Größe ausgewählt.'},
+  note_nocert:{en:'Enter a certified value for every selected quantity.',
+               de:'Für jede ausgewählte Größe einen zertifizierten Wert eingeben.'},
+  crit_main:{en:'Acceptable deviation of the mean from the certified value — first layer ±{a} %, second ±{b} %, third ±{c} %, fourth ±{d} %{comp}. SD: standard deviation of the measurements, RSD: standard deviation divided by the mean.{short}',
+             de:'Zulässige Abweichung des Mittelwerts vom zertifizierten Wert — erste Schicht ±{a} %, zweite ±{b} %, dritte ±{c} %, vierte ±{d} %{comp}. SD: Standardabweichung der Messungen, RSD: Standardabweichung geteilt durch den Mittelwert.{short}'},
+  crit_comp:{en:', composition ±{tol} %',de:', Zusammensetzung ±{tol} %'},
+  crit_short:{en:' Fewer than {min} measurements were made (n = {n}); the minimum is not met and the result above is informative only.',
+              de:' Es wurden weniger als {min} Messungen durchgeführt (n = {n}); das Minimum ist nicht erreicht, das obige Ergebnis ist nur informativ.'},
+  ch_certified:{en:'certified',de:'zertifiziert'},
+  ch_mean:{en:'mean',de:'Mittelwert'},
+  ch_title:{en:'{label} ({unit}) — reading order',de:'{label} ({unit}) — Messreihenfolge'},
+  sign_engineer:{en:'Engineer',de:'Prüfer'},
+  sign_date:{en:'Date',de:'Datum'},
+  sign_signature:{en:'Signature',de:'Unterschrift'},
+  sign_remarks:{en:'Remarks',de:'Bemerkungen'}
+};
+const LANGS=['en','de'];
+const LANG=()=>(typeof settings!=='undefined'&&LANGS.includes(settings.lang))?settings.lang:'en';
+function t(k,vars){
+  let s=(STR[k]&&STR[k][LANG()])||(STR[k]&&STR[k].en)||k;
+  if(vars)Object.keys(vars).forEach(v=>{s=s.split('{'+v+'}').join(vars[v]);});
+  return s;
+}
 // Fixed issuer of the confirmation — never varies, so it is not a setting.
 const CO_LOGO='data:image/png;base64,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';
 const CO_NAME='Hitachi High-Tech Analytical Science', CO_ADDR='Wellesweg 31, 47589 Uedem';
 const MIN_N=5;                       // fewer than this → warn, verdict still given
-const MAX_USE=10;                    // a confirmation needs 5–10 readings; extra repeats are evaluated but not needed
+let MAX_USE=null;                    // null = no cap, use every loaded measurement; set by the user to limit it
+let rememberMaxUse=false;            // when true, MAX_USE is restored from storage instead of defaulting to "all"
+const LS_KEY='xrf_appconf_signoff';  // remembers engineer + title + show-charts + the reading cap across sessions (not the date — that's re-defaulted to today)
 const TOL_TH=[5,10,15,20];           // by coating depth: 1st layer 5 %, 2nd 10 %, 3rd 15 %, 4th and deeper 20 %
 const TOL_COMP=10;                   // chemical composition, all layers
 
@@ -224,11 +341,20 @@ let MEAS=[];                         // extracted measurements
 const checkOn={};                    // groupKey||qKey -> bool   (user override of the auto-detect)
 const certVal={};                    // groupKey||qKey -> string (typed certified value)
 const remarks={};                    // groupKey       -> string
-const settings={engineer:'',signdate:''};
+const settings={engineer:'',engineerTitle:'',signdate:'',lang:'en'};
+function loadSignoff(){try{const s=JSON.parse(localStorage.getItem(LS_KEY));if(s){
+  settings.engineer=s.engineer||'';settings.engineerTitle=s.engineerTitle||'';
+  settings.lang=LANGS.includes(s.lang)?s.lang:'en';showCharts=!!s.showCharts;
+  rememberMaxUse=!!s.rememberMaxUse;
+  MAX_USE=(rememberMaxUse&&Number.isFinite(s.maxUse)&&s.maxUse>0)?s.maxUse:null;
+}}catch(e){}}
+function saveSignoff(){try{localStorage.setItem(LS_KEY,JSON.stringify({engineer:settings.engineer,engineerTitle:settings.engineerTitle,showCharts,lang:settings.lang,rememberMaxUse,maxUse:MAX_USE}));}catch(e){}}
 let showCharts=false;
 
 /* ---------- helpers ---------- */
-function fmt(x,dec){if(x==null||Number.isNaN(x))return '—';return Number(x).toFixed(dec==null?2:dec);}
+// German technical documents use a decimal comma. Applied only to formatted measurement VALUES —
+// never to dates (dd.mm.yyyy) or the S/N, both of which legitimately contain dots.
+function fmt(x,dec){if(x==null||Number.isNaN(x))return '—';const s=Number(x).toFixed(dec==null?2:dec);return LANG()==='de'?s.replace('.',','):s;}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function stats(vals){
   const v=vals.filter(x=>x!=null&&!Number.isNaN(x)); const n=v.length; if(!n)return null;
@@ -309,23 +435,23 @@ function quantities(g){
   const ref=g.items[0], qs=[]; let depth=0;
   ref.layers.forEach((L,i)=>{
     if(L.substrate){
-      L.elements.forEach((el,j)=>qs.push({key:`${i}:el${j}`,label:`${el.sym} in ${L.short}`,unit:el.unit,dec:el.dec,
-        kind:'el',li:i,ej:j,tol:TOL_COMP,defOn:false,why:'substrate — not measured'}));
+      L.elements.forEach((el,j)=>qs.push({key:`${i}:el${j}`,label:t('q_in',{sym:el.sym,short:L.short}),unit:el.unit,dec:el.dec,
+        kind:'el',li:i,ej:j,tol:TOL_COMP,defOn:false,why:t('why_substrate')}));
       return;
     }
     depth++;
     const tol=TOL_TH[Math.min(depth,TOL_TH.length)-1];
-    qs.push({key:`${i}:th`,label:`${L.name} thickness`,unit:L.thickUnit,dec:L.thickDec,
-      kind:'th',li:i,depth,tol,defOn:true,why:`layer ${depth}`});
+    qs.push({key:`${i}:th`,label:t('q_thickness',{name:L.name}),unit:L.thickUnit,dec:L.thickDec,
+      kind:'th',li:i,depth,tol,defOn:true,why:t('why_layer',{n:depth})});
     const pure=L.elements.length<2;
-    L.elements.forEach((el,j)=>qs.push({key:`${i}:el${j}`,label:pure?`${el.sym} content`:`${el.sym} in ${L.short}`,unit:el.unit,dec:el.dec,
+    L.elements.forEach((el,j)=>qs.push({key:`${i}:el${j}`,label:pure?t('q_content',{sym:el.sym}):t('q_in',{sym:el.sym,short:L.short}),unit:el.unit,dec:el.dec,
       kind:'el',li:i,ej:j,depth,tol:TOL_COMP,defOn:!pure,
-      why:pure?'pure element — 100 % by definition':`composition, layer ${depth}`}));
+      why:pure?t('why_pure'):t('why_comp',{n:depth})}));
   });
   return qs;
 }
 // A confirmation is built on 5–10 readings. Extra repeats are kept in the file list but not evaluated.
-function used(g){return g.items.slice(0,MAX_USE);}
+function used(g){return MAX_USE?g.items.slice(0,MAX_USE):g.items;}
 function isOn(g,q){const k=g.key+'||'+q.key; if(!(k in checkOn))checkOn[k]=q.defOn; return checkOn[k];}
 function certOf(g,q){return certVal[g.key+'||'+q.key]||'';}
 function qVal(m,q){
@@ -347,8 +473,8 @@ function evaluate(g,q){
 function groupVerdict(g){
   const rows=quantities(g).filter(q=>isOn(g,q)).map(q=>({q,e:evaluate(g,q)}));
   const n=used(g).length;
-  if(!rows.length)      return {state:'na',rows,n,why:'No quantity selected for this application.'};
-  if(rows.some(r=>r.e.verdict==='na')) return {state:'na',rows,n,why:'Enter a certified value for every selected quantity.'};
+  if(!rows.length)      return {state:'na',rows,n,why:t('note_noqty')};
+  if(rows.some(r=>r.e.verdict==='na')) return {state:'na',rows,n,why:t('note_nocert')};
   return {state:rows.every(r=>r.e.verdict==='pass')?'pass':'fail',rows,n,why:''};
 }
 
@@ -365,8 +491,8 @@ async function loadFiles(fileList){
     MEAS.push(m);
   }
   $('loadInfo').textContent=MEAS.length
-    ? `${MEAS.length} measurement(s) loaded${dups?` · ${dups} duplicate(s) skipped`:''}${skipped?` · ${skipped} file(s) ignored`:''}.`
-    : 'No usable measurements found. Use the single measurement-*.json files.';
+    ? `${t('ui_loaded',{n:MEAS.length})}${dups?t('ui_dups',{n:dups}):''}${skipped?t('ui_skipped',{n:skipped}):''}.`
+    : t('ui_none_usable');
   render();
 }
 
@@ -374,8 +500,8 @@ async function loadFiles(fileList){
 function renderSidebar(gs){
   $('cardChecks').hidden=!gs.length;
   $('cardOpt').hidden=!gs.length;
-  $('tagFiles').textContent=MEAS.length?`${MEAS.length} file(s)`:'none';
-  $('tagChecks').textContent=gs.length===1?'1 application':`${gs.length} applications`;
+  $('tagFiles').textContent=MEAS.length?t('tag_files',{n:MEAS.length}):t('tag_none');
+  $('tagChecks').textContent=gs.length===1?t('tag_1app'):t('tag_napps',{n:gs.length});
 
   // Quantities are listed under their own layer, so the coating stack itself is readable:
   // Layer 1 Sn → Layer 2 Ni → Substrate Cu/Zn.
@@ -386,27 +512,27 @@ function renderSidebar(gs){
       return `<div class="qrow ${on?'':'off'}">
         <input type="checkbox" data-chk="${esc(g.key+'||'+q.key)}" ${on?'checked':''}>
         <div><div class="qlab">${esc(q.label)} <span class="qsub">(${esc(q.unit)})</span></div>
-             <div class="qsub">${on?`tolerance ±${q.tol} %`:esc(q.why)}</div></div>
+             <div class="qsub">${on?esc(t('lbl_tolerance',{tol:q.tol})):esc(q.why)}</div></div>
         <input type="text" data-cert="${esc(g.key+'||'+q.key)}" value="${esc(certOf(g,q))}"
-               placeholder="certified" ${on?'':'disabled'}>
+               placeholder="${esc(t('ph_certified'))}" ${on?'':'disabled'}>
       </div>`;
     };
     let depth=0;
     const stack=ref.layers.map((L,i)=>{
       const mine=qs.filter(q=>q.li===i);
-      const head=L.substrate?`Substrate — ${esc(L.short)}`:`Layer ${++depth} — ${esc(L.short)}`;
-      return `<div class="lay"><div class="layh">${head}</div>${mine.map(qrow).join('')}</div>`;
+      const head=L.substrate?t('lbl_substrate',{name:L.short}):t('lbl_layer',{n:++depth,name:L.short});
+      return `<div class="lay"><div class="layh">${esc(head)}</div>${mine.map(qrow).join('')}</div>`;
     }).join('');
     return `<div class="gsec">
       <div class="gname">${esc(groupLabel(g,gs))}</div>
-      <div class="gmeta">${n} measurement(s) used${g.items.length>n?` of ${g.items.length} loaded`:''}${n<MIN_N?` · below the ${MIN_N} required`:''}</div>
+      <div class="gmeta">${esc(g.items.length>n?t('gm_added',{tot:g.items.length,n}):t('gm_used',{n}))}${n<MIN_N?esc(t('gm_below',{min:MIN_N})):''}</div>
       ${stack}
     </div>`;
   }).join('');
 
   $('remBody').innerHTML=gs.map(g=>`
-    <label class="fld">Remarks — ${esc(groupLabel(g,gs))}</label>
-    <textarea data-rem="${esc(g.key)}" placeholder="Observations, deviations, actions…">${esc(remarks[g.key]||'')}</textarea>
+    <label class="fld">${esc(t('fld_remarks',{label:groupLabel(g,gs)}))}</label>
+    <textarea data-rem="${esc(g.key)}" placeholder="${esc(t('ph_remarks'))}">${esc(remarks[g.key]||'')}</textarea>
   `).join('');
 
   $('checksBody').querySelectorAll('[data-chk]').forEach(el=>el.onchange=()=>{checkOn[el.dataset.chk]=el.checked;render();});
@@ -422,15 +548,15 @@ function renderSidebar(gs){
 function headerBlock(g){
   const items=used(g);
   const devs=[...new Map(items.map(m=>[m.device.type+'|'+m.device.sn,m.device])).values()];
-  const dev=devs.map(d=>`${MAKER} ${esc(d.type)} ${MODEL_SUFFIX} · S/N ${esc(d.sn)}`).join('  |  ');
+  const dev=devs.map(d=>`${MAKER} ${esc(d.type)} ${t('model_suffix')} · S/N ${esc(d.sn)}`).join('  |  ');
   // Measurements run through an application carry a measurementProgramUlid; without one the
   // operator picked the calibration directly. The sheet names whichever it actually was.
-  const kind=g.app?'Application':'Calibration';
+  const kind=g.app?t('kind_app'):t('kind_calib');
   return `
   <div class="ac-head">
     <div class="ttl">
-      <h2>CALIBRATION CONFIRMATION</h2>
-      <div class="sub">Verification against a certified reference</div>
+      <h2>${t('sheet_title')}</h2>
+      <div class="sub">${t('sheet_sub')}</div>
     </div>
     <div class="co">
       <img class="mark" src="${CO_LOGO}" alt="HITACHI">
@@ -438,15 +564,15 @@ function headerBlock(g){
       <div class="addr">${CO_ADDR}</div>
     </div>
   </div>
-  <div class="ac-app">${kind}: ${esc(groupLabel(g))}</div>
+  <div class="ac-app">${esc(kind)}: ${esc(groupLabel(g))}</div>
   <div class="ac-dev">${dev||'—'}</div>
-  <div class="ac-meta">Measured on <b>${fmtDate(items[0].timestamp)}</b> · <b>${items.length}</b> measurements</div>`;
+  <div class="ac-meta">${t('sheet_measured',{date:fmtDate(items[0].timestamp),n:items.length})}</div>`;
 }
 
 function readingsTable(g,rows){
   if(!rows.length)return '';
   return `
-  <div class="sect-h">Measurements</div>
+  <div class="sect-h">${t('sect_measurements')}</div>
   <table class="data">
     <thead><tr><th>#</th>${rows.map(r=>`<th class="u">${esc(r.q.label)} (${esc(r.q.unit)})</th>`).join('')}</tr></thead>
     <tbody>${used(g).map((m,i)=>`<tr><td>${i+1}</td>${rows.map(r=>`<td>${fmt(qVal(m,r.q),r.q.dec)}</td>`).join('')}</tr>`).join('')}</tbody>
@@ -455,11 +581,11 @@ function readingsTable(g,rows){
 
 function verdictTable(rows){
   return `
-  <div class="sect-h">Comparison with the certified value</div>
+  <div class="sect-h" style="margin-top:22px">${t('sect_comparison')}</div>
   <table class="data">
     <thead><tr>
-      <th>Quantity</th><th>Certified</th><th>Mean</th><th>SD</th><th>RSD</th>
-      <th>Deviation</th><th>Tolerance</th><th>Result</th>
+      <th>${t('th_quantity')}</th><th>${t('th_certified')}</th><th>${t('th_mean')}</th><th>${t('th_sd')}</th><th>${t('th_rsd')}</th>
+      <th>${t('th_deviation')}</th><th>${t('th_tolerance')}</th><th>${t('th_result')}</th>
     </tr></thead>
     <tbody>${rows.map(({q,e})=>{
       const d=e.dev==null?'—':`${e.dev>=0?'+':'−'}${fmt(Math.abs(e.dev),2)} %`;
@@ -471,7 +597,7 @@ function verdictTable(rows){
         <td>${e.s&&e.s.rsd!=null?fmt(e.s.rsd,2)+' %':'—'}</td>
         <td>${d}</td>
         <td>±${q.tol} %</td>
-        <td><span class="vt ${e.verdict}">${e.verdict==='na'?'—':e.verdict.toUpperCase()}</span></td>
+        <td><span class="vt ${e.verdict}">${e.verdict==='na'?'—':t(e.verdict==='pass'?'val_pass':'val_fail')}</span></td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
@@ -488,7 +614,7 @@ function runChart(g,q,e){
   const all=pts.map(p=>p.v).concat(lo!=null?[lo,hi,e.c]:[]).concat(mean!=null?[mean]:[]);
   let mn=Math.min(...all), mx=Math.max(...all); const pad=(mx-mn||Math.abs(mx)||1)*0.15;
   mn-=pad; mx+=pad;
-  const x=i=>L+(W-L-R)*(pts.length>1?i/(vals.length-1||1):0.5);
+  const x=i=>L+(W-L-R)*(vals.length>1?i/(vals.length-1||1):0.5);
   const y=v=>T+(H-T-B)*(1-(v-mn)/(mx-mn||1));
   // colours go in style="" not fill="" — var() does not resolve in SVG presentation attributes
   const band=lo!=null?`<rect x="${L}" y="${y(hi)}" width="${W-L-R}" height="${Math.max(0,y(lo)-y(hi))}" style="fill:var(--pass-bg);stroke:var(--pass-line);stroke-width:.6"/>`:'';
@@ -500,17 +626,17 @@ function runChart(g,q,e){
   // Labels name the line only. The values are in the table directly above, and at this size a
   // repeated number is unreadable rather than informative.
   const cline=e.c!=null?`<line x1="${L}" x2="${W-R}" y1="${y(e.c)}" y2="${y(e.c)}" style="stroke:var(--pass);stroke-width:1" stroke-dasharray="4 3"/>
-    <text x="${W-R+5}" y="${yc.toFixed(1)}" font-size="8.5" style="fill:var(--pass)">certified</text>`:'';
+    <text x="${W-R+5}" y="${yc.toFixed(1)}" font-size="8.5" style="fill:var(--pass)">${esc(t('ch_certified'))}</text>`:'';
   // the mean gets its own colour — blue is already the measured series, and two blue lines read as one broken line
   const mline=mean!=null?`<line x1="${L}" x2="${W-R}" y1="${y(mean)}" y2="${y(mean)}" style="stroke:var(--mean);stroke-width:1.1"/>
-    <text x="${W-R+5}" y="${ym.toFixed(1)}" font-size="8.5" style="fill:var(--mean)">mean</text>`:'';
+    <text x="${W-R+5}" y="${ym.toFixed(1)}" font-size="8.5" style="fill:var(--mean)">${esc(t('ch_mean'))}</text>`:'';
   const path=pts.map((p,k)=>`${k?'L':'M'}${x(p.i).toFixed(1)},${y(p.v).toFixed(1)}`).join('');
   const dots=pts.map(p=>{
     const out=lo!=null&&(p.v<lo||p.v>hi);
     return `<circle cx="${x(p.i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.4" style="fill:var(${out?'--fail':'--brand'})"/>`;
   }).join('');
   const ax=[mn,mx].map(v=>`<text x="${L-5}" y="${(y(v)+3).toFixed(1)}" text-anchor="end" font-size="8" fill="#5b6472">${fmt(v,q.dec)}</text>`).join('');
-  return `<div class="chart-box"><h4>${esc(q.label)} (${esc(q.unit)}) — reading order</h4>
+  return `<div class="chart-box"><h4>${esc(t('ch_title',{label:q.label,unit:q.unit}))}</h4>
     <svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
       ${band}${cline}${mline}
       <line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="#c8cfd8"/>
@@ -522,27 +648,21 @@ function runChart(g,q,e){
 }
 
 function criteriaBlock(n,rows){
-  const short=n<MIN_N
-    ? ` Fewer than ${MIN_N} measurements were made (n = ${n}); the minimum is not met and the result above is informative only.`
-    : '';
+  const short=n<MIN_N?t('crit_short',{min:MIN_N,n}):'';
   // the composition limit is only stated when a composition row is actually being judged —
   // an unstated criterion on a customer document is worse than one extra clause
-  const comp=rows.some(r=>r.q.kind==='el')?`, composition ±${TOL_COMP} %`:'';
-  return `<div class="crit">
-    Acceptable deviation of the mean from the certified value — first layer ±${TOL_TH[0]} %,
-    second ±${TOL_TH[1]} %, third ±${TOL_TH[2]} %, fourth ±${TOL_TH[3]} %${comp}.
-    SD: standard deviation of the measurements, RSD: standard deviation divided by the mean.${short}
-  </div>`;
+  const comp=rows.some(r=>r.q.kind==='el')?t('crit_comp',{tol:TOL_COMP}):'';
+  return `<div class="crit">${esc(t('crit_main',{a:TOL_TH[0],b:TOL_TH[1],c:TOL_TH[2],d:TOL_TH[3],comp,short}))}</div>`;
 }
 
 function signBlock(g){
   const rem=(remarks[g.key]||'').trim();
   return `<div class="signoff">
-    ${rem?`<div class="sect-h" style="margin-top:0">Remarks</div><div class="rem">${esc(rem)}</div>`:''}
+    ${rem?`<div class="sect-h" style="margin-top:0">${t('sign_remarks')}</div><div class="rem">${esc(rem)}</div>`:''}
     <div class="sigwrap"><div class="sigrow">
-      <div><div class="val">${esc(settings.engineer)||'&nbsp;'}</div><div class="line">Engineer</div></div>
-      <div><div class="val">${esc(settings.signdate)||'&nbsp;'}</div><div class="line">Date</div></div>
-      <div class="sig"><div class="line">Signature</div></div>
+      <div><div class="val">${esc(settings.engineer)||'&nbsp;'}</div><div class="line">${esc(settings.engineerTitle)||t('sign_engineer')}</div></div>
+      <div><div class="val">${esc(settings.signdate)||'&nbsp;'}</div><div class="line">${t('sign_date')}</div></div>
+      <div class="sig"><div class="line">${t('sign_signature')}</div></div>
     </div></div>
   </div>`;
 }
@@ -566,15 +686,36 @@ function sheet(g,gi,gs){
 function renderSheets(gs){
   $('out').innerHTML=gs.length
     ? gs.map((g,i)=>sheet(g,i,gs)).join('')
-    : `<div class="empty"><h2>No measurements loaded</h2>
-       <p>Drop the individual <b>measurement-*.json</b> files on the left. Files are grouped by application /
-       calibration, and each group is printed as its own A4 sheet.</p></div>`;
+    : `<div class="empty"><h2>${esc(t('ui_empty_h'))}</h2><p>${t('ui_empty_p')}</p></div>`;
 }
 function render(){const gs=groups();renderSidebar(gs);renderSheets(gs);}
 
+/* ---------- language wiring ---------- */
+function applyLang(){
+  document.documentElement.lang=LANG();
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n);});
+  document.querySelectorAll('[data-i18n-html]').forEach(el=>{el.innerHTML=t(el.dataset.i18nHtml);});
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{el.placeholder=t(el.dataset.i18nPh);});
+  LANGS.forEach(l=>$('lang_'+l).classList.toggle('active',LANG()===l));
+  document.title=`${t('ui_appname')} v${VERSION}`;
+}
+LANGS.forEach(l=>{$('lang_'+l).onclick=()=>{
+  if(LANG()===l)return;
+  settings.lang=l;
+  saveSignoff();
+  applyLang();
+  render();
+};});
+
 /* ---------- wiring ---------- */
 $('appVer').textContent='v'+VERSION;
-$('maxUseTxt').textContent=MAX_USE;
+loadSignoff();
+applyLang();
+$('engineer').value=settings.engineer;
+$('engineerTitle').value=settings.engineerTitle;
+$('showCharts').checked=showCharts;
+$('rememberMaxUse').checked=rememberMaxUse;
+if(MAX_USE!=null)$('maxUse').value=MAX_USE;
 $('signdate').value=settings.signdate=todayDE();
 
 $('drop').onclick=()=>$('file').click();
@@ -582,10 +723,19 @@ $('file').onchange=e=>{loadFiles(e.target.files);e.target.value='';};
 ['dragenter','dragover'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('over');}));
 ['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('over');}));
 $('drop').addEventListener('drop',e=>loadFiles(e.dataTransfer.files));
-$('clearBtn').onclick=()=>{MEAS=[];$('loadInfo').textContent='No measurements loaded.';render();};
+$('clearBtn').onclick=()=>{MEAS=[];$('loadInfo').textContent=t('ui_no_meas');render();};
 
 ['engineer','signdate'].forEach(k=>{$(k).oninput=()=>{settings[k]=$(k).value;renderSheets(groups());};});
-$('showCharts').onchange=e=>{showCharts=e.target.checked;renderSheets(groups());};
+$('engineerTitle').oninput=()=>{settings.engineerTitle=$('engineerTitle').value;renderSheets(groups());};
+['engineer','engineerTitle'].forEach(k=>$(k).addEventListener('change',saveSignoff));
+$('showCharts').onchange=e=>{showCharts=e.target.checked;saveSignoff();renderSheets(groups());};
+$('maxUse').onchange=e=>{
+  const n=parseInt(e.target.value,10);
+  MAX_USE=Number.isFinite(n)&&n>0?n:null;
+  if(rememberMaxUse)saveSignoff();
+  render();
+};
+$('rememberMaxUse').onchange=e=>{rememberMaxUse=e.target.checked;saveSignoff();};
 $('printBtn').onclick=()=>window.print();
 
 render();
