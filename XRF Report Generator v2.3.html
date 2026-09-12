@@ -67,6 +67,14 @@
   .cbody label.fld:first-child{margin-top:0}
   .drop{border:2px dashed #c4ccd6;border-radius:10px;padding:16px;text-align:center;color:var(--muted);background:#fbfcfe}
   .drop.hot{border-color:var(--brand);background:#eef5ff;color:var(--brand)}
+  /* one row per loaded measurement — edit its sample name or drop it, without re-uploading */
+  .meas-list{max-height:220px;overflow-y:auto;margin-top:8px;display:flex;flex-direction:column;gap:4px}
+  .meas-row{display:flex;align-items:center;gap:6px}
+  .meas-row input[type=text]{flex:1;min-width:0;padding:4px 6px;font-size:12px}
+  .meas-row .meta{flex:0 0 auto;min-width:18px;color:var(--muted);font-size:10.5px;white-space:nowrap}
+  .meas-row .rm{flex:0 0 auto;border:none;background:none;color:#b3541e;cursor:pointer;font-size:15px;
+    line-height:1;padding:2px 5px;border-radius:4px}
+  .meas-row .rm:hover{background:#fbe9e2}
   .toggle{display:flex;align-items:center;gap:8px;padding:4px 0}
   .toggle input{width:16px;height:16px}
   .logo-prev{max-width:100%;max-height:54px;margin-top:8px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:4px}
@@ -92,8 +100,12 @@
   /* The preview is a sheet of A4: full paper width with the print margins as padding, so the
      content area is 186mm — the same width it prints at. Measuring on screen is therefore valid
      for print, and the page still looks like a page instead of content jammed to the edge. */
+  /* No max-width clamp: on a window narrower than 210mm/297mm this used to shrink BOTH
+     orientations down to the same container width, making landscape look identical to portrait.
+     .main already scrolls horizontally (overflow-x:auto), so the page just keeps its true size
+     and the preview stays an accurate match for print at any window width. */
   .report-group{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12mm;margin:0 auto 22px;
-    width:210mm;max-width:100%;box-shadow:0 2px 10px rgba(20,30,50,.10)}
+    width:210mm;box-shadow:0 2px 10px rgba(20,30,50,.10)}
   body.or-landscape .report-group{width:297mm}
   .selector{max-width:210mm}
   body.or-landscape .selector{max-width:297mm}
@@ -110,32 +122,23 @@
   .profbar{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}
   .profbar button{flex:1;font-size:12px;padding:6px 4px}
   .warn{font-size:12px;color:#b3541e;margin-top:8px}
-  /* company | instrument | customer — the instrument sits in what used to be dead space */
-  /* company | instrument | customer. align-items:start makes the two logos share a top edge —
-     centring them made identical logos sit at different heights whenever one block had more lines. */
-  .rg-head{display:grid;grid-template-columns:1fr 1.7fr 1fr;align-items:start;gap:14px;
+  /* company | customer. align-items:start makes the two logos share a top edge —
+     centring them made identical logos sit at different heights whenever one block had more lines.
+     The instrument/S/N no longer lives here (it's a plain item in .rg-sub, after Operator), so
+     company can be as wide as the page allows. */
+  .rg-head{display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:14px;
     border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:6px}
   .party{min-width:0}
-  .party.mid{text-align:center;align-self:center}
   .party.right{text-align:right}
-  .party img{max-height:80px;max-width:260px;object-fit:contain;display:block;margin-bottom:8px}
+  .party img{max-height:110px;max-width:100%;object-fit:contain;display:block;margin-bottom:32px}
   .party.right img{margin-left:auto}
   .party .nm{font-weight:700;font-size:18px}
   .party .addr{font-size:13px;color:var(--muted);white-space:pre-line}
-  .rg-title{font-size:20px;font-weight:700;margin:14px 0 2px}          /* user's own title — left, like the rest of the page */
-  .rg-sub{font-size:12.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+  .rg-title{font-size:20px;font-weight:700;margin:14px 0 6px}          /* bottom margin matches .rg-sub-row's own gap, so title→row1 and row1→row2 read as one even rhythm */
+  .rg-sub{font-size:12.5px;color:var(--muted);margin-bottom:12px}
+  .rg-sub-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px}
+  .rg-sub-row:first-child{margin-top:0}
   .rg-cal{color:var(--ink)}
-  /* Permanent instrument line — always printed. Letterhead treatment: centred and letterspaced,
-     the same size as the title so it reads as a header without outranking what the report IS. */
-  /* fixed instrument identity — always printed, centred between the two parties */
-  /* Sized by fitDeviceLine() at render: the largest size that still keeps the name on ONE line,
-     so it is always as big as the column allows and never wraps to a third row. */
-  /* NEVER clip this: overflow:hidden + nowrap once truncated the instrument name mid-word on a
-     printed report. Wrapping is merely ugly; truncation is wrong. fitDeviceLine() shrinks it until
-     it fits on one line, and wrapping is the safety net if that ever fails. */
-  .rg-device .dev{display:block;font-size:20px;font-weight:700;color:var(--ink);line-height:1.18;overflow-wrap:break-word}
-  .rg-device .sn{display:block;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:3px}
-  .rg-device .sn+.dev{margin-top:8px}   /* second instrument, when a report spans two */
   /* abbreviation key — small, right-aligned, closes out the section it belongs to */
   .abbr{font-size:9.5px;line-height:1.5;color:#8b95a3;text-align:right;margin:-12px 0 18px;padding-left:18%}
   .abbr b{font-weight:600;color:#6b7480}
@@ -198,7 +201,7 @@
     table.data thead{display:table-header-group}           /* repeat the header row on each printed page */
     .sect-h,.chart-box h4{page-break-after:avoid;break-after:avoid}
     .abbr{page-break-before:avoid;break-before:avoid}       /* the key must never orphan from its section */
-    .rg-device{page-break-after:avoid;break-after:avoid}
+    .rg-sub{page-break-after:avoid;break-after:avoid}
   }
 </style>
 <style id="pageStyle">@page{size:A4 portrait;margin:12mm}</style>
@@ -221,6 +224,14 @@
           <input type="file" id="fileInput" accept=".json,application/json" multiple hidden>
         </div>
         <div id="loadInfo" class="note" style="margin-top:8px"></div>
+        <div id="measList" class="meas-list"></div>
+        <div id="batchRenameBlock" hidden>
+          <div class="frow" style="margin-top:8px">
+            <input type="text" id="batchName" data-i18n-ph="ui_ph_batchname" style="flex:1">
+            <button id="batchRenameBtn" class="btn-sm no-print" data-i18n="ui_batchrename"></button>
+          </div>
+          <div class="toggle" style="margin-top:4px"><input type="checkbox" id="batchNum" checked><label for="batchNum" data-i18n="ui_batchnum"></label></div>
+        </div>
         <div style="margin-top:8px"><button id="clearBtn" class="btn-sm no-print" data-i18n="ui_clear"></button></div>
       </div>
     </details>
@@ -399,7 +410,7 @@
    Bump ONCE PER RELEASED SET OF CHANGES, not once per edit — a session's worth of tweaks is one
    version. Record it in CHANGELOG.md. Shown in the sidebar only, which is hidden when printing,
    so it never lands in a customer's PDF. */
-const APP_VERSION='2.2';
+const APP_VERSION='2.3';
 const SYM={1:'H',2:'He',3:'Li',4:'Be',5:'B',6:'C',7:'N',8:'O',9:'F',10:'Ne',11:'Na',12:'Mg',13:'Al',14:'Si',15:'P',16:'S',17:'Cl',18:'Ar',19:'K',20:'Ca',21:'Sc',22:'Ti',23:'V',24:'Cr',25:'Mn',26:'Fe',27:'Co',28:'Ni',29:'Cu',30:'Zn',31:'Ga',32:'Ge',33:'As',34:'Se',35:'Br',36:'Kr',37:'Rb',38:'Sr',39:'Y',40:'Zr',41:'Nb',42:'Mo',44:'Ru',45:'Rh',46:'Pd',47:'Ag',48:'Cd',49:'In',50:'Sn',51:'Sb',52:'Te',53:'I',56:'Ba',57:'La',58:'Ce',72:'Hf',73:'Ta',74:'W',75:'Re',76:'Os',77:'Ir',78:'Pt',79:'Au',80:'Hg',81:'Tl',82:'Pb',83:'Bi'};
 const sym=z=>SYM[z]||('Z'+z);
 const CHART_COLORS=['#1f6feb','#e8590c','#12894f','#8a3ffc','#d4374e','#0a7d8c','#a37200','#5a6472'];
@@ -489,6 +500,10 @@ const STR={
   ui_drop:{en:'Drop <b>measurement-*.json</b> here<br>or',de:'<b>measurement-*.json</b> hier ablegen<br>oder'},
   ui_choose:{en:'Choose files',de:'Dateien wählen'},
   ui_clear:{en:'Clear loaded data',de:'Geladene Daten löschen'},
+  ui_meas_remove:{en:'Remove this measurement',de:'Diese Messung entfernen'},
+  ui_ph_batchname:{en:'New sample name',de:'Neuer Probenname'},
+  ui_batchrename:{en:'Rename all',de:'Alle umbenennen'},
+  ui_batchnum:{en:'Append number (1, 2, 3…)',de:'Nummer anhängen (1, 2, 3…)'},
   ui_f_title:{en:'Report title',de:'Berichtstitel'},
   ui_pos_top:{en:'top',de:'oben'},
   ui_pos_undertitle:{en:'under the title',de:'unter dem Titel'},
@@ -807,6 +822,29 @@ function afterDataChange(){
   $('loadInfo').textContent=t('ui_loaded',{n:MEAS.length})+'.';
   buildQuantCols(); saveState(); render();
 }
+/* Sidebar list of every loaded measurement — lets you rename or drop one without re-uploading.
+   Rebuilt by render() itself, so it always reflects MEAS; the name edit fires on 'change' (not
+   'input') so it doesn't rebuild — and steal focus — on every keystroke. */
+function renderMeasList(){
+  const host=$('measList'); if(!host)return;
+  host.innerHTML=MEAS.map((m,i)=>`
+    <div class="meas-row" data-idx="${i}">
+      <span class="meta">#${i+1}</span>
+      <input type="text" class="meas-name" value="${esc(m.sample)}">
+      <button type="button" class="rm" title="${t('ui_meas_remove')}" aria-label="${t('ui_meas_remove')}">×</button>
+    </div>`).join('');
+}
+$('measList').addEventListener('change',e=>{
+  const inp=e.target.closest('.meas-name'); if(!inp)return;
+  const m=MEAS[+inp.closest('.meas-row').dataset.idx]; if(!m)return;
+  m.sample=inp.value.trim()||'(unnamed)';
+  saveState(); render();
+});
+$('measList').addEventListener('click',e=>{
+  const btn=e.target.closest('.rm'); if(!btn)return;
+  MEAS.splice(+btn.closest('.meas-row').dataset.idx,1);
+  afterDataChange();
+});
 
 /* ---------- grouping + quantities ---------- */
 function groups(){
@@ -883,12 +921,12 @@ function groupDevices(g){
 const MAKER='HITACHI';   // FT-series instruments are Hitachi High-Tech
 // HITACHI and the model number are identity and never translate; the descriptor after them does.
 const modelSuffix=()=>t('rep_model_suffix');
-// Always rendered — the instrument that produced the numbers is not an optional detail.
+// Always rendered — the instrument that produced the numbers is not an optional detail. Plain
+// text now: it's one more item in .rg-sub, right after Operator, not a letterhead-style line.
 function deviceBand(g){
   const ds=groupDevices(g); if(!ds.length)return '';
-  const names=ds.map(d=>`<span class="dev">${MAKER} ${esc(d.type||t('rep_instrument'))} ${modelSuffix()}</span>`+
-    (d.sn?`<span class="sn">SN ${esc(d.sn)}</span>`:'')).join('');
-  return `<div class="rg-device">${names}</div>`;
+  return ds.map(d=>`${MAKER} ${esc(d.type||t('rep_instrument'))} ${modelSuffix()}`+
+    (d.sn?` · SN ${esc(d.sn)}`:'')).join('; ');
 }
 
 /* ---------- abbreviation key ---------- */
@@ -927,6 +965,7 @@ function buildDataCols(g){
 }
 function buildQuantCols(){
   $('card_cols').hidden=!MEAS.length;
+  $('batchRenameBlock').hidden=!MEAS.length;
   const g=activeGroup();
   buildDataCols(g);
   const host=$('quantCols'); host.innerHTML='';
@@ -953,6 +992,7 @@ function selectorBanner(gs){
   el.appendChild(row); return el;
 }
 function render(){
+  renderMeasList();
   profState('company'); profState('customer'); cardTags();   // fields may have drifted from the selected profile
   const gs=groups();
   const host=$('preview');
@@ -972,12 +1012,14 @@ function render(){
   if(gs.length>1) host.appendChild(selectorBanner(gs));
   if(ag) host.appendChild(renderGroup(ag,0));
   else{const d=document.createElement('div');d.className='empty';d.innerHTML=`<h2>${t('ui_pick_h')}</h2><p>${t('ui_pick_p')}</p>`;host.appendChild(d);}
-  fitDeviceLine();   // must run after the report is in the DOM — it measures it
 }
 function renderGroup(g,gi){
   const el=document.createElement('section'); el.className='report-group'; el.dataset.gid=gi;
   const txt=textFor(g.key);
-  const opName=txt.operator||g.items[0].operator||'';
+  // The instrument's built-in operator profiles are literally named e.g. "Manager (Default)" —
+  // meaningful on the device's own menu, meaningless on a customer's printed report. Strip the
+  // "(Default)" suffix only from that raw imported fallback, never from a name you typed yourself.
+  const opName=txt.operator||(g.items[0].operator||'').replace(/\s*\(Default\)\s*$/i,'');
   const coLogo=companyLogo?`<img src="${companyLogo}" alt="company">`:'';
   const cuLogo=customerLogo?`<img src="${customerLogo}" alt="customer">`:'';
   const coBlock=toggles.company?`<div class="party">${coLogo}
@@ -990,15 +1032,23 @@ function renderGroup(g,gi){
         ${settings.job?`<div class="addr">${t('rep_job')}: ${esc(settings.job)}</div>`:''}
       </div>`:'<div class="party right"></div>';
   const dev=deviceBand(g);
-  // header row: company | instrument | customer. Rendered whenever any of the three has content.
-  const head=(toggles.company||toggles.customer||dev)
-    ? `<div class="rg-head">${coBlock}<div class="party mid">${dev}</div>${cuBlock}</div>` : '';
+  // header row: company | customer. Rendered whenever either has content.
+  const head=(toggles.company||toggles.customer)
+    ? `<div class="rg-head">${coBlock}${cuBlock}</div>` : '';
   const calDisplay=(txt.calname||'').trim()||groupLabel(g);
+  // Two explicit rows, title-first: instrument, S/N, calibration and the measurement count
+  // together on row 1 (right under the title); operator alone on row 2. Both row gaps use the
+  // same margin (see .rg-sub-row) so title→row1 and row1→row2 read as one even rhythm.
   let html=head+`<div class="rg-title">${esc(txt.title||t('rep_title_fallback'))}</div>
     <div class="rg-sub">
-      <span>${t('rep_operator')}: ${esc(opName||'—')}</span>
-      <span>${t('rep_measurements',{n:g.items.length})}</span>
-      <span>${g.app?t('rep_application'):t('rep_calibration')}: <span class="rg-cal">${esc(calDisplay)}</span></span>
+      <div class="rg-sub-row">
+        ${dev?`<span>${dev}</span>`:''}
+        <span>${g.app?t('rep_application'):t('rep_calibration')}: <span class="rg-cal">${esc(calDisplay)}</span></span>
+        <span>${t('rep_measurements',{n:g.items.length})}</span>
+      </div>
+      <div class="rg-sub-row">
+        <span>${t('rep_operator')}: ${esc(opName||'—')}</span>
+      </div>
     </div>`;
   if(txt.notes) html+=`<div class="rg-notes">${nl2(txt.notes)}</div>`;
 
@@ -1341,7 +1391,11 @@ $('printAllBtn').onclick=()=>{document.body.classList.remove('print-single');win
 function applyOrientation(){
   const land=toggles.orientation==='landscape';
   document.body.classList.toggle('or-landscape',land);
-  $('pageStyle').textContent=`@page{size:A4 ${land?'landscape':'portrait'};margin:12mm}`;
+  // Explicit swapped mm dimensions, not the `landscape` keyword: some Chromium builds size the
+  // PDF paper correctly either way but still print the CONTENT portrait-oriented unless the
+  // width/height are actually swapped, since the print dialog's Layout toggle can silently
+  // override the size keyword's implied rotation.
+  $('pageStyle').textContent=`@page{size:${land?'297mm 210mm':'210mm 297mm'};margin:12mm}`;
   $('or_portrait').classList.toggle('active',!land);
   $('or_landscape').classList.toggle('active',land);
 }
@@ -1375,46 +1429,6 @@ $('companyLogoInput').onchange=()=>readImg($('companyLogoInput'),d=>{companyLogo
 $('custLogoInput').onchange=()=>readImg($('custLogoInput'),d=>{customerLogo=d;showLogo('custLogoPrev',d);saveState();render();});
 $('companyLogoClear').onclick=()=>{companyLogo=null;showLogo('companyLogoPrev',null);saveState();render();};
 $('custLogoClear').onclick=()=>{customerLogo=null;showLogo('custLogoPrev',null);saveState();render();};
-
-/* Shrink-to-fit the instrument name: start at the largest size and step down until it fits the
-   column on one line. Keeps it as big as the page allows without ever wrapping to a third row. */
-/* Size the instrument name to the largest that still fits on ONE line of the printed page.
-   Measured against an off-screen probe set to the exact printed column width — NOT against the
-   live element — so the result is identical whatever the window size, and printing from a small
-   window cannot produce a different fit than printing from a large one.
-   History: this used to measure the live element and hide the overflow, which silently truncated
-   the name mid-word on paper. The element can no longer clip; wrapping is the safety net. */
-const HEAD_GAP=14, MID_FR=1.7, PAGE_MM={portrait:186,landscape:273};   // must match .rg-head / @page
-function fitDeviceLine(){
-  const els=document.querySelectorAll('.rg-device .dev');
-  if(!els.length||!els[0].getBoundingClientRect) return;
-  const land=document.body.classList&&document.body.classList.contains('or-landscape');
-  const pagePx=PAGE_MM[land?'landscape':'portrait']*96/25.4;
-  const midPx=(pagePx-2*HEAD_GAP)*MID_FR/(1+MID_FR+1);   // the grid's middle column, on paper
-  const MAX=land?28:22, MIN=12, LH=1.18;
-  let probe=document.getElementById('__devProbe');
-  if(!probe){
-    probe=document.createElement('div'); probe.id='__devProbe';
-    probe.style.cssText='position:absolute;left:-9999px;top:0;visibility:hidden;font-weight:700;'+
-      'line-height:'+LH+';white-space:normal;overflow-wrap:break-word';
-    document.body.appendChild(probe);
-  }
-  probe.style.width=midPx+'px';
-  els.forEach(el=>{
-    probe.style.fontFamily=(el.style&&getComputedStyle?getComputedStyle(el).fontFamily:'')||'';
-    probe.textContent=el.textContent;
-    let size=MAX, guard=0;
-    for(;;){
-      probe.style.fontSize=size+'px';
-      if(probe.scrollHeight<=size*LH*1.5 || size<=MIN || guard++>50) break;   // <=1 line
-      size-=0.5;
-    }
-    el.style.fontSize=size+'px';
-    const sn=el.parentNode&&el.parentNode.querySelector?el.parentNode.querySelector('.sn'):null;
-    if(sn) sn.style.fontSize=Math.max(10.5,size*0.66).toFixed(1)+'px';
-  });
-}
-window.addEventListener('beforeprint',fitDeviceLine);
 
 /* ---------- collapsible sidebar cards ----------
    Each card remembers whether it was open. The summary carries a short tag saying what the
@@ -1526,6 +1540,13 @@ $('pickBtn').onclick=()=>$('fileInput').click();
 /* Take the files, then blank the input. A file input fires 'change' only when the selection
    CHANGES, so without this, Clear → Choose files → pick the same files again did nothing at all. */
 $('fileInput').onchange=()=>{const fs=[...$('fileInput').files]; $('fileInput').value=''; loadFiles(fs);};
+$('batchRenameBtn').onclick=()=>{
+  const base=$('batchName').value.trim();
+  if(!base||!MEAS.length)return;
+  const withNum=$('batchNum').checked;
+  MEAS.forEach((m,i)=>{m.sample=withNum?`${base} ${i+1}`:base;});
+  afterDataChange();
+};
 $('clearBtn').onclick=()=>{
   if(!confirm(t('ui_confirm_clr')))return;
   MEAS=[];activeKey=null;

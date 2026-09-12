@@ -1,7 +1,8 @@
 # Changelog
 
-The version is set in `APP_VERSION` at the top of the script in `XRF Report Generator.html` and
-shown as a badge in the sidebar — never in the printed PDF.
+The version is set in `APP_VERSION` at the top of the script in the main HTML file (named
+`XRF Report Generator vX.Y.html`, kept in sync with `APP_VERSION` on each release) and shown as a
+badge in the sidebar — never in the printed PDF.
 
 Bump it **once per released set of changes**, not once per edit. A round of tweaks within a single
 working session is one version.
@@ -11,6 +12,58 @@ working session is one version.
   traced back to the version that made it.
 - **MINOR** — new capability that leaves existing reports looking the same.
 - **PATCH** — a fix or a tweak.
+
+---
+
+## 2.3
+
+Header layout freed up for the company/customer block, the info line reorganised, and a set of
+per-measurement editing tools so a batch of imported readings no longer has to be exactly right
+on upload.
+
+### Header layout
+
+- **Company and customer logos/names are no longer squeezed into a middle column.** The instrument
+  name and S/N used to sit between them in a 3-column grid, capping each party to a narrow slice of
+  the page; the header is now a plain 2-column grid (company | customer), each free to use the full
+  half-width.
+- **Logos can be noticeably larger** — capped at 110px tall (was 80px) and up to the full width of
+  their own column (was a fixed 260px), so a wide wordmark and a small mark both scale to fill the
+  space now available.
+- **Instrument name, S/N, calibration and the measurement count now read as one plain info line**
+  below the report title, instead of a separate bold letterhead-style row. Operator sits on its own
+  line directly beneath.
+- **The instrument's built-in "(Default)" operator profiles no longer print that suffix.** A device
+  operator literally named `Manager (Default)` on the instrument's own menu prints as `Manager` on
+  the report; anything you type into the Operator field yourself is never touched.
+
+### Editing loaded measurements
+
+- **Every loaded measurement now has its own row in the sidebar**, showing its position number and
+  an editable sample-name field, so a name can be corrected without re-uploading the file.
+- **Remove a single measurement** with a ✕ on its row, instead of clearing everything and starting
+  over.
+- **Batch-rename all loaded measurements at once**, with an option to auto-append a number
+  (`Coupon A 1`, `Coupon A 2`, …) so they stay distinct.
+
+### Fixed
+
+- **Landscape preview did nothing on a narrower window.** `.report-group` had a `max-width:100%`
+  clamp that shrank both orientations down to the same on-screen width whenever the window was
+  narrower than the true page size, making Landscape look identical to Portrait. Removed; the
+  preview now always shows the page at its true size, scrolling horizontally if the window is too
+  narrow.
+- **Printing in Chrome/Brave sometimes still came out portrait after selecting Landscape.** The
+  `@page{size:A4 landscape}` keyword form isn't reliably honoured by the print dialog's own Layout
+  control in some Chromium builds; switched to explicit swapped page dimensions
+  (`297mm 210mm` / `210mm 297mm`), which is more consistently respected.
+
+### Known limitation
+
+- **Safari does not use the page's CSS to select print orientation at all** — this is a Safari/
+  WebKit limitation, not something the page can control. Landscape must be selected manually in
+  Safari's own print dialog; the report layout itself adapts correctly once that's done. Chrome and
+  Brave apply Landscape automatically.
 
 ---
 
